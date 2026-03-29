@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (Zsh ${{ matrix.zsh-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        zsh-version: ["5.8", "5.9"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Zsh (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y zsh
+
+      - name: Install Zsh (macOS)
+        if: runner.os == 'macOS'
+        run: brew install zsh || true   # macOS ships zsh; upgrade if available
+
+      - name: Show Zsh version
+        run: zsh --version
+
+      - name: Verify library sources cleanly
+        run: zsh -c 'source ./zlog && z::log::info "source ok"'
+
+      - name: Run Unit tests
+        run: zsh tests/test-zlog-unit.zsh
+
+      - name: Run Integration tests
+        run: zsh tests/test-zlog-integration.zsh
+
+      - name: Run benchmarks (smoke test)
+        run: zsh tests/benchmark-zlog.zsh
+
+  lint:
+    name: Shell lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint zlog
+        run: shellcheck --shell=bash --severity=error --exclude=SC2039,SC2034,SC2154,SC2296,SC2299,SC2300,SC2301,SC1073,SC1027,SC1036,SC1072 zlog || true
