@@ -1328,7 +1328,7 @@ z::log::clear_sys_cache() {
 #   local username="${REPLY[username]}"
 #   local pid="${REPLY[pid]}"
 #
-# Output: Sets REPLY as associative array with keys: hostname, username, pid
+# Output: Sets reply as key/value pairs: hostname value username value pid value
 # Returns: 0 always
 #
 # Note: This is more efficient than calling each function separately
@@ -1348,13 +1348,7 @@ __z::sys::get_all_info() {
   __z::sys::pid
   local pid="$REPLY"
 
-  # Return as associative array
-  # Note: We declare it global temporarily, caller should copy to local
-  typeset -gA REPLY=(
-    [hostname]="$hostname"
-    [username]="$username"
-    [pid]="$pid"
-  )
+  reply=(hostname "$hostname" username "$username" pid "$pid")
 
   return 0
 }
@@ -1776,9 +1770,10 @@ z::log::set_max_message_size() {
 
   # Parse size
   __z::log::parse_size "$size_input"
+  local parse_status=$?
   local size_bytes="$REPLY"
 
-  if (( $? != 0 )); then
+  if (( parse_status != 0 )); then
     print -u2 "zlog: Invalid message size: $size_input"
     print -u2 "      Use: bytes (e.g., 1024) or human-readable (e.g., 10KB, 1.5MB)"
     return 1
