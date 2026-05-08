@@ -94,9 +94,18 @@
 
 
 
-emulate -L zsh
-setopt warn_create_global typeset_silent no_unset
-zmodload zsh/datetime 2>/dev/null
+if [[ -z ${ZSH_VERSION-} ]]; then
+  print -u2 "ERROR: This framework requires Zsh"
+  return 1 2>/dev/null || exit 1
+fi
+
+emulate zsh
+setopt typeset_silent
+
+if ! zmodload zsh/datetime 2>/dev/null; then
+  print -u2 "zlog: zsh/datetime module is required"
+  return 1 2>/dev/null || exit 1
+fi
 
 ###############################################################################
 # INITIALIZATION GUARD
