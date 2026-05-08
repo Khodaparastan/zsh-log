@@ -6509,8 +6509,14 @@ __z::log::flush_fast() {
 z::log::enable_performance_mode() {
   emulate -L zsh
 
+  if (( ${_zlog_config[fast_mode]:-0} )); then
+    return 0
+  fi
+
   # Replace engine with fast version
+  if (( ! ${+functions[__z::log::engine_original]} )); then
   functions[__z::log::engine_original]="${functions[__z::log::engine]}"
+  fi
   functions[__z::log::engine]="${functions[__z::log::engine_fast]}"
 
   # Disable timestamp cache updates (use stale timestamps for 1 second)
@@ -6533,6 +6539,10 @@ z::log::enable_performance_mode() {
 z::log::disable_performance_mode() {
   emulate -L zsh
 
+  if (( ! ${_zlog_config[fast_mode]:-0} )); then
+    return 0
+  fi
+
   # Restore original engine
   if (( ${+functions[__z::log::engine_original]} )); then
     functions[__z::log::engine]="${functions[__z::log::engine_original]}"
@@ -6550,12 +6560,6 @@ z::log::disable_performance_mode() {
 ###############################################################################
 # INITIALIZATION
 ###############################################################################
-
-# Ensure we're running in Zsh
-if [[ -z "$ZSH_VERSION" ]]; then
-  print "ERROR: This framework requires Zsh" >&2
-  return 1 2>/dev/null || exit 1
-fi
 
 # Initialize the framework (idempotent)
 if (( ! ${+_zlog_initialized} )); then
