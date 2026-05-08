@@ -3188,6 +3188,12 @@ __z::log::write_file() {
   # Ensure directory exists
   __z::log::ensure_log_dir "$logfile" || return 1
 
+  # Use async writer when enabled.
+  if [[ -n "${_zlog_state[async_fd]:-}" ]]; then
+    __z::log::write_async "$message"
+    return $?
+  fi
+
   # Write directly to file
   if ! print -r -- "$message" >> "$logfile" 2>/dev/null; then
     print -u2 "zlog: Failed to write to log file: $logfile"
@@ -3236,7 +3242,7 @@ z::log::set_rotation_lock_timeout() {
 ###
 z::log::enable_buffering() {
   emulate -L zsh
-  setopt localoptions
+  setopt localoptions no_unset
   local size="${1:-50}"
 
   # Validate buffer size
@@ -3248,49 +3254,10 @@ z::log::enable_buffering() {
   _zlog_config[buffered]=1
   _zlog_config[buffer_max]=$size
 
-  # Try multiple approaches for exit handling
-  local hook_method="none"
+  z::log::register_cleanup
+  _zlog_config[exit_hook_method]="cleanup"
 
-  # Method 1: Try add-zsh-hook (most robust for interactive shells)
-  if autoload -Uz add-zsh-hook 2>/dev/null; then
-    add-zsh-hook zshexit z::log::flush
-    hook_method="add-zsh-hook"
-    __z::log::debug_internal "Using add-zsh-hook for exit handler"
-  # Method 2: Try TRAPEXIT function
-  elif ! (( ${+functions[TRAPEXIT]} )); then
-    # Define TRAPEXIT function
-    function TRAPEXIT() {
-      z::log::flush
-    }
-    hook_method="TRAPEXIT"
-    __z::log::debug_internal "Created TRAPEXIT function for exit handler"
-  # Method 3: Existing TRAPEXIT - wrap it
-  else
-    # Save existing TRAPEXIT
-    if ! (( ${+functions[__zlog_original_TRAPEXIT]} )); then
-      functions[__zlog_original_TRAPEXIT]="${functions[TRAPEXIT]}"
-    fi
-
-    # Redefine TRAPEXIT to call both
-    function TRAPEXIT() {
-      z::log::flush
-      __zlog_original_TRAPEXIT
-    }
-    hook_method="TRAPEXIT_wrapped"
-    __z::log::debug_internal "Wrapped existing TRAPEXIT function"
-  fi
-
-  # Store which method we used
-  _zlog_config[exit_hook_method]="$hook_method"
-
-  # For subshells and scripts, also use EXIT trap
-  # This is more reliable than zshexit in subshells
-  trap 'z::log::flush' EXIT
-
-  # Signal traps (always set these)
-  trap 'z::log::flush' INT TERM HUP QUIT
-
-  __z::log::debug_internal "Buffering enabled: buffer_max=$size, hook_method=$hook_method"
+  __z::log::debug_internal "Buffering enabled: buffer_max=$size"
   return 0
 }
 
@@ -3304,39 +3271,6 @@ z::log::disable_buffering() {
   z::log::flush
 
   _zlog_config[buffered]=0
-
-  # Clean up based on method used
-  local hook_method="${_zlog_config[exit_hook_method]:-none}"
-
-  case "$hook_method" in
-    add-zsh-hook)
-      if autoload -Uz add-zsh-hook 2>/dev/null; then
-        add-zsh-hook -d zshexit z::log::flush
-        __z::log::debug_internal "Removed zshexit hook"
-      fi
-      ;;
-    TRAPEXIT)
-      # Remove our TRAPEXIT
-      unfunction TRAPEXIT 2>/dev/null
-      __z::log::debug_internal "Removed TRAPEXIT function"
-      ;;
-    TRAPEXIT_wrapped)
-      # Restore original TRAPEXIT
-      if (( ${+functions[__zlog_original_TRAPEXIT]} )); then
-        functions[TRAPEXIT]="${functions[__zlog_original_TRAPEXIT]}"
-        unfunction __zlog_original_TRAPEXIT
-        __z::log::debug_internal "Restored original TRAPEXIT function"
-      fi
-      ;;
-    *)
-      __z::log::debug_internal "No exit hook to remove"
-      ;;
-  esac
-
-  # Remove all traps
-  trap - EXIT INT TERM HUP QUIT
-
-  # Clear hook method
   _zlog_config[exit_hook_method]=""
 
   __z::log::debug_internal "Buffering disabled"
@@ -3359,6 +3293,7 @@ __z::log::buffer_add() {
 
   # Add to buffer
   _zlog_buffer+=("$message")
+  _zlog_state[buffer_count]=${#_zlog_buffer}
 
   # Auto-flush on errors or when buffer full
   if (( level == ${_ZLOG_LEVEL_ERROR:-0} || ${#_zlog_buffer} >= ${_zlog_config[buffer_max]:-50} )); then
@@ -3404,6 +3339,8 @@ z::log::flush() {
   if printf '%s\n' "${_zlog_buffer[@]}" >> "$logfile" 2>/dev/null; then
     __z::log::debug_internal "Successfully flushed $buffer_count messages"
     _zlog_buffer=()
+    _zlog_state[buffer_count]=0
+    (( _zlog_stats[buffer_flushes]++ ))
     return 0
   else
     print -u2 "zlog: Failed to write buffer to: $logfile ($buffer_count messages retained)"
