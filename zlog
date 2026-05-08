@@ -2286,7 +2286,7 @@ z::log::get_timestamp() {
 #        local human="${timestamps[human]}"
 #        local iso="${timestamps[iso]}"
 #
-# Output: Sets REPLY as associative array with keys: human, iso, epoch, ms, ns
+# Output: Sets reply as key/value pairs: human value iso value epoch value ms value ns value
 # Returns: 0 always
 #
 # Performance: More efficient than calling get_timestamp multiple times
@@ -2304,13 +2304,12 @@ __z::log::get_all_timestamps() {
   __z::log::timestamp_ns
   ns="$REPLY"
 
-  # Return as associative array
-  typeset -gA REPLY=(
-    [human]="$_zlog_timestamp_cache[formatted]"
-    [iso]="$_zlog_timestamp_cache[iso]"
-    [epoch]="$EPOCHSECONDS"
-    [ms]="$_zlog_timestamp_cache[ms]"
-    [ns]="$ns"
+  reply=(
+    human "$_zlog_timestamp_cache[formatted]"
+    iso "$_zlog_timestamp_cache[iso]"
+    epoch "$EPOCHSECONDS"
+    ms "$_zlog_timestamp_cache[ms]"
+    ns "$ns"
   )
 
   return 0
