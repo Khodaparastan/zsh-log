@@ -2978,7 +2978,9 @@ __z::log::release_rotation_lock() {
 ###
 __z::log::get_file_size() {
   emulate -L zsh
-  local filepath="$1"
+  setopt localoptions no_unset
+
+  local filepath="${1-}"
 
   # Check if file exists
   if [[ ! -f "$filepath" ]]; then
@@ -2987,20 +2989,20 @@ __z::log::get_file_size() {
   fi
 
   # Detect and cache stat command type (only once)
-  if [[ -z "${_zlog_config[stat_cmd]}" ]]; then
+  if [[ -z "${_zlog_state[stat_cmd]:-}" ]]; then
     if stat -c%s "$filepath" 2>/dev/null >/dev/null; then
-      _zlog_config[stat_cmd]="gnu"
+      _zlog_state[stat_cmd]="gnu"
     elif stat -f%z "$filepath" 2>/dev/null >/dev/null; then
-      _zlog_config[stat_cmd]="bsd"
+      _zlog_state[stat_cmd]="bsd"
     else
-      _zlog_config[stat_cmd]="none"
+      _zlog_state[stat_cmd]="none"
       __z::log::debug_internal "Cannot detect stat command"
     fi
   fi
 
   # Get file size using cached command
   local file_size=0
-  case "${_zlog_config[stat_cmd]}" in
+  case "${_zlog_state[stat_cmd]:-none}" in
     gnu)
       file_size=$(stat -c%s "$filepath" 2>/dev/null) || file_size=0
       ;;
@@ -3010,7 +3012,8 @@ __z::log::get_file_size() {
     none)
       # Fallback: use wc -c
       if command -v wc &>/dev/null; then
-        file_size=$(wc -c < "$filepath" 2>/dev/null | tr -d ' ') || file_size=0
+        file_size=$(wc -c < "$filepath" 2>/dev/null) || file_size=0
+        file_size="${file_size//[[:space:]]/}"
       else
         REPLY="0"
         return 1
@@ -3042,9 +3045,10 @@ __z::log::rotate_if_needed() {
 
   # Get file size
   __z::log::get_file_size "$logfile"
+  local size_status=$?
   local file_size="$REPLY"
 
-  if (( $? != 0 )); then
+  if (( size_status != 0 )); then
     __z::log::debug_internal "Cannot determine file size, skipping rotation"
     return 0
   fi
