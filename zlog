@@ -95,7 +95,7 @@
 
 
 if [[ -z ${ZSH_VERSION-} ]]; then
-  print -u2 "ERROR: This framework requires Zsh"
+  print -r -u2 -- "ERROR: This framework requires Zsh"
   return 1 2>/dev/null || exit 1
 fi
 
@@ -103,7 +103,7 @@ emulate zsh
 setopt typeset_silent
 
 if ! zmodload zsh/datetime 2>/dev/null; then
-  print -u2 "zlog: zsh/datetime module is required"
+  print -r -u2 -- "zlog: zsh/datetime module is required"
   return 1 2>/dev/null || exit 1
 fi
 
@@ -412,13 +412,13 @@ __z::log::validate_globals() {
   # Validate rotate_size
   if (( _zlog_config[rotate_size] < _ZLOG_MIN_ROTATE_SIZE )); then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: rotate_size too small (${_zlog_config[rotate_size]}), setting to ${_ZLOG_MIN_ROTATE_SIZE} bytes"
+      print -r -u2 -- "zlog: Warning: rotate_size too small (${_zlog_config[rotate_size]}), setting to ${_ZLOG_MIN_ROTATE_SIZE} bytes"
     fi
     _zlog_config[rotate_size]=$_ZLOG_MIN_ROTATE_SIZE
     (( changed++ ))
   elif (( _zlog_config[rotate_size] > _ZLOG_MAX_ROTATE_SIZE )); then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: rotate_size too large (${_zlog_config[rotate_size]}), setting to ${_ZLOG_MAX_ROTATE_SIZE} bytes"
+      print -r -u2 -- "zlog: Warning: rotate_size too large (${_zlog_config[rotate_size]}), setting to ${_ZLOG_MAX_ROTATE_SIZE} bytes"
     fi
     _zlog_config[rotate_size]=$_ZLOG_MAX_ROTATE_SIZE
     (( changed++ ))
@@ -436,7 +436,7 @@ __z::log::validate_globals() {
   # Validate log level
   if (( _zlog_config[level] < 0 || _zlog_config[level] > 3 )); then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: invalid log level (${_zlog_config[level]}), resetting to INFO"
+      print -r -u2 -- "zlog: Warning: invalid log level (${_zlog_config[level]}), resetting to INFO"
     fi
     _zlog_config[level]=2
     (( changed++ ))
@@ -445,7 +445,7 @@ __z::log::validate_globals() {
   # Validate file level
   if (( _zlog_config[file_level] < -1 || _zlog_config[file_level] > 3 )); then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: invalid file log level (${_zlog_config[file_level]}), setting to follow console"
+      print -r -u2 -- "zlog: Warning: invalid file log level (${_zlog_config[file_level]}), setting to follow console"
     fi
     _zlog_config[file_level]=-1
     (( changed++ ))
@@ -454,7 +454,7 @@ __z::log::validate_globals() {
   # Validate format
   if [[ "${_zlog_config[format]}" != "text" ]] && [[ "${_zlog_config[format]}" != "json" ]]; then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: invalid format (${_zlog_config[format]}), resetting to text"
+      print -r -u2 -- "zlog: Warning: invalid format (${_zlog_config[format]}), resetting to text"
     fi
     _zlog_config[format]="text"
     (( changed++ ))
@@ -466,7 +466,7 @@ __z::log::validate_globals() {
     (( changed++ ))
   elif (( _zlog_config[rotate_keep] > 100 )); then
     if (( _zlog_config[debug_mode] )); then
-      print -u2 "zlog: Warning: rotate_keep too large (${_zlog_config[rotate_keep]}), setting to 100"
+      print -r -u2 -- "zlog: Warning: rotate_keep too large (${_zlog_config[rotate_keep]}), setting to 100"
     fi
     _zlog_config[rotate_keep]=100
     (( changed++ ))
@@ -713,7 +713,7 @@ __z::log::init_colors() {
 
   # Verbose initialization
   if [[ -n "${ZLOG_VERBOSE_INIT-}" ]]; then
-    print -u2 "zlog: Initializing color system..."
+    print -r -u2 -- "zlog: Initializing color system..."
   fi
 
   # Detect color support if in auto mode
@@ -738,7 +738,7 @@ __z::log::init_colors() {
     )
 
     if [[ -n "${ZLOG_VERBOSE_INIT-}" ]]; then
-      print -u2 "zlog: Color system ready (mode: none)"
+      print -r -u2 -- "zlog: Color system ready (mode: none)"
     fi
 
     return 0
@@ -860,7 +860,7 @@ __z::log::init_colors() {
   _zlog_colors[bg_success]="${_zlog_colors[bg_bright_green]}"
 
   if [[ -n "${ZLOG_VERBOSE_INIT-}" ]]; then
-    print -u2 "zlog: Color system ready (mode: ${_zlog_color_cache[mode]})"
+    print -r -u2 -- "zlog: Color system ready (mode: ${_zlog_color_cache[mode]})"
   fi
 
   return 0
@@ -937,7 +937,7 @@ z::log::set_color_mode() {
       return 0
       ;;
     *)
-      print -u2 "zlog: Invalid color mode: $mode (use: auto, none, basic, 256, truecolor)"
+      print -r -u2 -- "zlog: Invalid color mode: $mode (use: auto, none, basic, 256, truecolor)"
       return 1
       ;;
   esac
@@ -967,34 +967,34 @@ z::log::show_colors() {
 
   (( _zlog_color_cache[initialized] )) || __z::log::init_colors
 
-  print "Color Mode: ${_zlog_color_cache[mode]}"
-  print ""
-  print "Basic Colors:"
+  print -r -- "Color Mode: ${_zlog_color_cache[mode]}"
+  print -r -- ""
+  print -r -- "Basic Colors:"
 
   local color
   for color in black red green yellow blue magenta cyan white; do
     z::log::colorize "$color" "  ■ $color"
-    print "$REPLY"
+    print -r -- "$REPLY"
   done
 
-  print ""
-  print "Bright Colors:"
+  print -r -- ""
+  print -r -- "Bright Colors:"
   for color in bright_black bright_red bright_green bright_yellow bright_blue bright_magenta bright_cyan bright_white; do
     z::log::colorize "$color" "  ■ $color"
-    print "$REPLY"
+    print -r -- "$REPLY"
   done
 
-  print ""
-  print "Log Level Colors:"
+  print -r -- ""
+  print -r -- "Log Level Colors:"
   for color in error warn info debug success; do
     z::log::colorize "$color" "  ■ $color"
-    print "$REPLY"
+    print -r -- "$REPLY"
   done
 
-  print ""
-  print "RGB Example (if supported):"
+  print -r -- ""
+  print -r -- "RGB Example (if supported):"
   z::log::colorize "rgb(255,100,50)" "  ■ rgb(255,100,50) - Custom orange"
-  print "$REPLY"
+  print -r -- "$REPLY"
 }
 ###############################################################################
 # INTERNAL DEBUGGING
@@ -1312,7 +1312,7 @@ z::log::clear_sys_cache() {
       __z::log::debug_internal "All system caches cleared"
       ;;
     *)
-      print -u2 "zlog: Invalid cache type: $type (use: hostname, username, pid, all)"
+      print -r -u2 -- "zlog: Invalid cache type: $type (use: hostname, username, pid, all)"
       return 1
       ;;
   esac
@@ -1565,7 +1565,7 @@ __z::str::pad() {
       REPLY="${left}${text}${right}"
       ;;
     *)
-      print -u2 "zlog: Invalid alignment: $align (use: left, right, center)"
+      print -r -u2 -- "zlog: Invalid alignment: $align (use: left, right, center)"
       REPLY="$text"
       return 1
       ;;
@@ -1764,7 +1764,7 @@ z::log::set_max_message_size() {
 
   # Validate input
   if [[ -z "$size_input" ]]; then
-    print -u2 "zlog: Message size cannot be empty"
+    print -r -u2 -- "zlog: Message size cannot be empty"
     return 1
   fi
 
@@ -1774,14 +1774,14 @@ z::log::set_max_message_size() {
   local size_bytes="$REPLY"
 
   if (( parse_status != 0 )); then
-    print -u2 "zlog: Invalid message size: $size_input"
-    print -u2 "      Use: bytes (e.g., 1024) or human-readable (e.g., 10KB, 1.5MB)"
+    print -r -u2 -- "zlog: Invalid message size: $size_input"
+    print -r -u2 -- "      Use: bytes (e.g., 1024) or human-readable (e.g., 10KB, 1.5MB)"
     return 1
   fi
 
   # Validate non-negative
   if (( size_bytes < 0 )); then
-    print -u2 "zlog: Message size cannot be negative: $size_bytes"
+    print -r -u2 -- "zlog: Message size cannot be negative: $size_bytes"
     return 1
   fi
 
@@ -1810,10 +1810,10 @@ z::log::get_max_message_size() {
   local size="${_zlog_config[max_message_size]:-0}"
 
   if (( size == 0 )); then
-    print "unlimited"
+    print -r -- "unlimited"
   else
     __z::log::format_size "$size"
-    print "$REPLY"
+    print -r -- "$REPLY"
   fi
 
   return 0
@@ -1835,7 +1835,7 @@ z::log::set_truncate_marker() {
   local marker="$1"
 
   if [[ -z "$marker" ]]; then
-    print -u2 "zlog: Truncate marker cannot be empty"
+    print -r -u2 -- "zlog: Truncate marker cannot be empty"
     return 1
   fi
 
@@ -2263,13 +2263,13 @@ z::log::get_timestamp() {
       __z::log::timestamp_ns
       ;;
     *)
-      print -u2 "zlog: Invalid timestamp format: $format"
-      print -u2 "      Valid formats:"
-      print -u2 "        human, text       - Human-readable (2026-03-01 12:30:45)"
-      print -u2 "        iso, iso8601      - ISO 8601 (2026-03-01T12:30:45.123+00:00)"
-      print -u2 "        epoch, unix       - Unix timestamp (1704110445)"
-      print -u2 "        ms, milliseconds  - Milliseconds (1704110445123)"
-      print -u2 "        ns, nanoseconds   - Nanoseconds (1704110445123456000)"
+      print -r -u2 -- "zlog: Invalid timestamp format: $format"
+      print -r -u2 -- "      Valid formats:"
+      print -r -u2 -- "        human, text       - Human-readable (2026-03-01 12:30:45)"
+      print -r -u2 -- "        iso, iso8601      - ISO 8601 (2026-03-01T12:30:45.123+00:00)"
+      print -r -u2 -- "        epoch, unix       - Unix timestamp (1704110445)"
+      print -r -u2 -- "        ms, milliseconds  - Milliseconds (1704110445123)"
+      print -r -u2 -- "        ns, nanoseconds   - Nanoseconds (1704110445123456000)"
       REPLY=""
       return 1
       ;;
@@ -2355,15 +2355,15 @@ z::log::set_timestamp_format() {
 
   # Validate input
   if [[ -z "$format" ]]; then
-    print -u2 "zlog: Timestamp format cannot be empty"
-    print -u2 ""
-    print -u2 "      Common examples:"
-    print -u2 "        %Y-%m-%d %H:%M:%S  - Default (2026-03-01 12:30:45)"
-    print -u2 "        %H:%M:%S           - Time only (12:30:45)"
-    print -u2 "        %Y-%m-%d           - Date only (2026-03-01)"
-    print -u2 "        %b %d %H:%M:%S     - Syslog style (Jan 01 12:30:45)"
-    print -u2 ""
-    print -u2 "      See 'man strftime' for all format codes"
+    print -r -u2 -- "zlog: Timestamp format cannot be empty"
+    print -r -u2 -- ""
+    print -r -u2 -- "      Common examples:"
+    print -r -u2 -- "        %Y-%m-%d %H:%M:%S  - Default (2026-03-01 12:30:45)"
+    print -r -u2 -- "        %H:%M:%S           - Time only (12:30:45)"
+    print -r -u2 -- "        %Y-%m-%d           - Date only (2026-03-01)"
+    print -r -u2 -- "        %b %d %H:%M:%S     - Syslog style (Jan 01 12:30:45)"
+    print -r -u2 -- ""
+    print -r -u2 -- "      See 'man strftime' for all format codes"
     return 1
   fi
 
@@ -2378,17 +2378,17 @@ z::log::set_timestamp_format() {
 
   # Validate that format produces output
   if [[ -z "$test_output" ]]; then
-    print -u2 "zlog: Invalid timestamp format: $format"
-    print -u2 "      Format produced no output"
-    print -u2 ""
-    print -u2 "      Common format codes:"
-    print -u2 "        %Y  Year (4 digits)       %m  Month (01-12)"
-    print -u2 "        %d  Day (01-31)           %H  Hour (00-23)"
-    print -u2 "        %M  Minute (00-59)        %S  Second (00-59)"
-    print -u2 "        %b  Month name (Jan)      %a  Weekday (Mon)"
-    print -u2 "        %z  Timezone (+0100)      %Z  Timezone (UTC)"
-    print -u2 ""
-    print -u2 "      See 'man strftime' for complete reference"
+    print -r -u2 -- "zlog: Invalid timestamp format: $format"
+    print -r -u2 -- "      Format produced no output"
+    print -r -u2 -- ""
+    print -r -u2 -- "      Common format codes:"
+    print -r -u2 -- "        %Y  Year (4 digits)       %m  Month (01-12)"
+    print -r -u2 -- "        %d  Day (01-31)           %H  Hour (00-23)"
+    print -r -u2 -- "        %M  Minute (00-59)        %S  Second (00-59)"
+    print -r -u2 -- "        %b  Month name (Jan)      %a  Weekday (Mon)"
+    print -r -u2 -- "        %z  Timezone (+0100)      %Z  Timezone (UTC)"
+    print -r -u2 -- ""
+    print -r -u2 -- "      See 'man strftime' for complete reference"
     return 1
   fi
 
@@ -2476,8 +2476,8 @@ z::log::format_epoch() {
 
   # Validate epoch is a number
   if [[ ! "$epoch" =~ '^[0-9]+$' ]]; then
-    print -u2 "zlog: Invalid epoch timestamp: $epoch"
-    print -u2 "      Expected: positive integer (seconds since 1970-01-01)"
+    print -r -u2 -- "zlog: Invalid epoch timestamp: $epoch"
+    print -r -u2 -- "      Expected: positive integer (seconds since 1970-01-01)"
     REPLY=""
     return 1
   fi
@@ -2487,8 +2487,8 @@ z::log::format_epoch() {
 
   if [[ -z "$REPLY" ]]; then
     # Fallback to prompt expansion (less reliable for arbitrary epochs)
-    print -u2 "zlog: Failed to format epoch: $epoch"
-    print -u2 "      strftime not available or format invalid"
+    print -r -u2 -- "zlog: Failed to format epoch: $epoch"
+    print -r -u2 -- "      strftime not available or format invalid"
     REPLY=""
     return 1
   fi
@@ -2612,10 +2612,10 @@ z::log::time_diff() {
 
   # Validate inputs are positive integers
   if [[ ! "$start_ms" =~ '^[0-9]+$' ]] || [[ ! "$end_ms" =~ '^[0-9]+$' ]]; then
-    print -u2 "zlog: Invalid timestamp values"
-    print -u2 "      start_ms: $start_ms"
-    print -u2 "      end_ms: $end_ms"
-    print -u2 "      Expected: positive integers (milliseconds)"
+    print -r -u2 -- "zlog: Invalid timestamp values"
+    print -r -u2 -- "      start_ms: $start_ms"
+    print -r -u2 -- "      end_ms: $end_ms"
+    print -r -u2 -- "      Expected: positive integers (milliseconds)"
     REPLY="<invalid>"
     return 1
   fi
@@ -2625,10 +2625,10 @@ z::log::time_diff() {
 
   # Check for negative duration
   if (( diff_ms < 0 )); then
-    print -u2 "zlog: Negative duration detected"
-    print -u2 "      start_ms: $start_ms"
-    print -u2 "      end_ms: $end_ms"
-    print -u2 "      diff: $diff_ms"
+    print -r -u2 -- "zlog: Negative duration detected"
+    print -r -u2 -- "      start_ms: $start_ms"
+    print -r -u2 -- "      end_ms: $end_ms"
+    print -r -u2 -- "      diff: $diff_ms"
     REPLY="<negative>"
     return 1
   fi
@@ -2663,7 +2663,7 @@ z::log::time_diff_signed() {
 
   # Validate inputs
   if [[ ! "$start_ms" =~ '^[0-9]+$' ]] || [[ ! "$end_ms" =~ '^[0-9]+$' ]]; then
-    print -u2 "zlog: Invalid timestamp values"
+    print -r -u2 -- "zlog: Invalid timestamp values"
     REPLY="<invalid>"
     return 1
   fi
@@ -3160,7 +3160,7 @@ __z::log::ensure_log_dir() {
     __z::log::debug_internal "Created log directory: $logdir"
     return 0
   else
-    print -u2 "zlog: Failed to create log directory: $logdir"
+    print -r -u2 -- "zlog: Failed to create log directory: $logdir"
     return 1
   fi
 }
@@ -3196,7 +3196,7 @@ __z::log::write_file() {
 
   # Write directly to file
   if ! print -r -- "$message" >> "$logfile" 2>/dev/null; then
-    print -u2 "zlog: Failed to write to log file: $logfile"
+    print -r -u2 -- "zlog: Failed to write to log file: $logfile"
     return 1
   fi
 
@@ -3215,7 +3215,7 @@ z::log::set_rotation_lock_timeout() {
   local timeout="$1"
 
   if [[ ! "$timeout" =~ '^[0-9]+$' ]] || (( timeout < 1 )); then
-    print -u2 "zlog: Invalid timeout: $timeout (must be positive integer)"
+    print -r -u2 -- "zlog: Invalid timeout: $timeout (must be positive integer)"
     return 1
   fi
 
@@ -3247,7 +3247,7 @@ z::log::enable_buffering() {
 
   # Validate buffer size
   if [[ ! "$size" =~ '^[0-9]+$' ]] || (( size < 1 )); then
-    print -u2 "zlog: Invalid buffer size: $size (must be positive integer)"
+    print -r -u2 -- "zlog: Invalid buffer size: $size (must be positive integer)"
     return 1
   fi
 
@@ -3268,7 +3268,10 @@ z::log::disable_buffering() {
   emulate -L zsh
 
   # Flush any pending messages
-  z::log::flush
+  if ! z::log::flush; then
+    print -r -u2 -- "zlog: Failed to flush buffer; buffering remains enabled"
+    return 1
+  fi
 
   _zlog_config[buffered]=0
   _zlog_config[exit_hook_method]=""
@@ -3343,7 +3346,7 @@ z::log::flush() {
     (( _zlog_stats[buffer_flushes]++ ))
     return 0
   else
-    print -u2 "zlog: Failed to write buffer to: $logfile ($buffer_count messages retained)"
+    print -r -u2 -- "zlog: Failed to write buffer to: $logfile ($buffer_count messages retained)"
     return 1
   fi
 }
@@ -3740,8 +3743,8 @@ __z::log::engine() {
   local current_depth="${_zlog_state[depth]:-0}"
 
   if (( current_depth >= max_depth )); then
-    print -u2 "zlog: Maximum recursion depth ($max_depth) exceeded at depth $current_depth"
-    print -u2 "      This usually indicates a logging loop. Check your log handlers."
+    print -r -u2 -- "zlog: Maximum recursion depth ($max_depth) exceeded at depth $current_depth"
+    print -r -u2 -- "      This usually indicates a logging loop. Check your log handlers."
     return 1
   fi
 
@@ -3759,14 +3762,14 @@ __z::log::engine() {
   fi
 
   if [[ ! "$level" =~ ${_zlog_patterns[number]} ]]; then
-    print -u2 "zlog: Invalid log level: '$level' (must be numeric 0-3)"
+    print -r -u2 -- "zlog: Invalid log level: '$level' (must be numeric 0-3)"
     _zlog_state[depth]=$current_depth
     return 2
   fi
 
   if (( level < 0 || level > 3 )); then
-    print -u2 "zlog: Log level out of range: $level (must be 0-3)"
-    print -u2 "      0=ERROR, 1=WARN, 2=INFO, 3=DEBUG"
+    print -r -u2 -- "zlog: Log level out of range: $level (must be 0-3)"
+    print -r -u2 -- "      0=ERROR, 1=WARN, 2=INFO, 3=DEBUG"
     _zlog_state[depth]=$current_depth
     return 2
   fi
@@ -3800,7 +3803,7 @@ __z::log::engine() {
 
   if (( format_status != 0 )); then
     # Fallback formatting on error
-    print -u2 "zlog: Format failed, using fallback"
+    print -r -u2 -- "zlog: Format failed, using fallback"
 
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null || print "UNKNOWN")
     local level_name="${_ZLOG_LEVEL_NAMES[$level]:-UNKNOWN}"
@@ -3814,9 +3817,9 @@ __z::log::engine() {
 
   # Output to console
   if (( should_console )); then
-    if ! print -u2 -r -- "$formatted"; then
+    if ! print -r -u2 -- "$formatted"; then
       (( _zlog_stats[errors_encountered]++ ))
-      print -u1 "zlog: stderr write failed: $formatted" 2>/dev/null || true
+      print -r -u2 -- "zlog: stderr write failed: $formatted" 2>/dev/null || true
     fi
   fi
 
@@ -3835,9 +3838,9 @@ __z::log::engine() {
     if (( write_status != 0 )); then
       (( _zlog_stats[errors_encountered]++ ))
       if (( _zlog_stats[errors_encountered] <= 5 )); then
-        print -u2 "zlog: File write failed (status: $write_status, error count: ${_zlog_stats[errors_encountered]})"
+        print -r -u2 -- "zlog: File write failed (status: $write_status, error count: ${_zlog_stats[errors_encountered]})"
       elif (( _zlog_stats[errors_encountered] == 6 )); then
-        print -u2 "zlog: File write errors continue, suppressing further error messages"
+        print -r -u2 -- "zlog: File write errors continue, suppressing further error messages"
       fi
     fi
   fi
@@ -3933,7 +3936,7 @@ z::log::error() {
   setopt localoptions no_unset
 
   if (( $# < 1 )); then
-    print -u2 "zlog: error() requires at least a message"
+    print -r -u2 -- "zlog: error() requires at least a message"
     return 1
   fi
 
@@ -3973,7 +3976,7 @@ z::log::warn() {
   setopt localoptions no_unset
 
   if (( $# < 1 )); then
-    print -u2 "zlog: warn() requires at least a message"
+    print -r -u2 -- "zlog: warn() requires at least a message"
     return 1
   fi
 
@@ -4012,7 +4015,7 @@ z::log::info() {
   setopt localoptions no_unset
 
   if (( $# < 1 )); then
-    print -u2 "zlog: info() requires at least a message"
+    print -r -u2 -- "zlog: info() requires at least a message"
     return 1
   fi
 
@@ -4051,7 +4054,7 @@ z::log::debug() {
   setopt localoptions no_unset
 
   if (( $# < 1 )); then
-    print -u2 "zlog: debug() requires at least a message"
+    print -r -u2 -- "zlog: debug() requires at least a message"
     return 1
   fi
 
@@ -4092,7 +4095,7 @@ z::log::log() {
 
   # Validate input
   if (( $# < 2 )); then
-    print -u2 "zlog: log() requires level and message"
+    print -r -u2 -- "zlog: log() requires level and message"
     return 1
   fi
 
@@ -4110,7 +4113,7 @@ z::log::log() {
   local level_num="$REPLY"
 
   if (( level_status != 0 )); then
-    print -u2 "zlog: Invalid level: $level_input"
+    print -r -u2 -- "zlog: Invalid level: $level_input"
     return 1
   fi
 
@@ -4135,17 +4138,17 @@ z::log::get_stats() {
   emulate -L zsh
   setopt localoptions no_unset
 
-  print "Logging Statistics:"
-  print "  Messages logged:     ${_zlog_stats[messages_logged]}"
-  print "  Messages dropped:    ${_zlog_stats[messages_dropped]}"
-  print "  Rotations performed: ${_zlog_stats[rotations_performed]}"
-  print "  Buffer flushes:      ${_zlog_stats[buffer_flushes]}"
-  print "  Errors encountered:  ${_zlog_stats[errors_encountered]}"
-  print ""
-  print "Active Resources:"
-  print "  Contexts:            ${_zlog_state[context_count]}"
-  print "  Timers:              ${_zlog_state[timer_count]}"
-  print "  Buffered messages:   ${#_zlog_buffer}"
+  print -r -- "Logging Statistics:"
+  print -r -- "  Messages logged:     ${_zlog_stats[messages_logged]}"
+  print -r -- "  Messages dropped:    ${_zlog_stats[messages_dropped]}"
+  print -r -- "  Rotations performed: ${_zlog_stats[rotations_performed]}"
+  print -r -- "  Buffer flushes:      ${_zlog_stats[buffer_flushes]}"
+  print -r -- "  Errors encountered:  ${_zlog_stats[errors_encountered]}"
+  print -r -- ""
+  print -r -- "Active Resources:"
+  print -r -- "  Contexts:            ${_zlog_state[context_count]}"
+  print -r -- "  Timers:              ${_zlog_state[timer_count]}"
+  print -r -- "  Buffered messages:   ${#_zlog_buffer}"
 
   return 0
 }
@@ -4186,7 +4189,7 @@ __z::log::printf_helper() {
 
   # Validate format string
   if [[ -z "$format" ]]; then
-    print -u2 "zlog: printf format string cannot be empty"
+    print -r -u2 -- "zlog: printf format string cannot be empty"
     return 1
   fi
 
@@ -4220,7 +4223,7 @@ z::log::errorf() {
   emulate -L zsh
 
   if (( $# < 1 )); then
-    print -u2 "zlog: errorf requires at least a format string"
+    print -r -u2 -- "zlog: errorf requires at least a format string"
     return 1
   fi
 
@@ -4252,7 +4255,7 @@ z::log::warnf() {
   emulate -L zsh
 
   if (( $# < 1 )); then
-    print -u2 "zlog: warnf requires at least a format string"
+    print -r -u2 -- "zlog: warnf requires at least a format string"
     return 1
   fi
 
@@ -4284,7 +4287,7 @@ z::log::infof() {
   emulate -L zsh
 
   if (( $# < 1 )); then
-    print -u2 "zlog: infof requires at least a format string"
+    print -r -u2 -- "zlog: infof requires at least a format string"
     return 1
   fi
 
@@ -4316,7 +4319,7 @@ z::log::debugf() {
   emulate -L zsh
 
   if (( $# < 1 )); then
-    print -u2 "zlog: debugf requires at least a format string"
+    print -r -u2 -- "zlog: debugf requires at least a format string"
     return 1
   fi
 
@@ -4445,7 +4448,7 @@ z::log::with_level() {
 
   # Validate input
   if (( $# < 2 )); then
-    print -u2 "zlog: with_level requires level and command"
+    print -r -u2 -- "zlog: with_level requires level and command"
     return 1
   fi
 
@@ -4461,7 +4464,7 @@ z::log::with_level() {
   local level_num="$REPLY"
 
   if (( level_status != 0 )); then
-    print -u2 "zlog: Invalid level for with_level: $new_level"
+    print -r -u2 -- "zlog: Invalid level for with_level: $new_level"
     return 1
   fi
 
@@ -4496,7 +4499,7 @@ z::log::silent() {
 
   # Validate input
   if (( $# < 1 )); then
-    print -u2 "zlog: silent requires a command to execute"
+    print -r -u2 -- "zlog: silent requires a command to execute"
     return 1
   fi
 
@@ -4538,7 +4541,7 @@ z::log::always() {
 
   # Validate input
   if (( $# < 1 )); then
-    print -u2 "zlog: always requires a message"
+    print -r -u2 -- "zlog: always requires a message"
     return 1
   fi
 
@@ -4584,7 +4587,7 @@ z::log::once() {
 
   # Validate input
   if (( $# < 3 )); then
-    print -u2 "zlog: once requires key, level, and message"
+    print -r -u2 -- "zlog: once requires key, level, and message"
     return 1
   fi
 
@@ -4659,7 +4662,7 @@ z::log::rate_limit() {
 
   # Validate input
   if (( $# < 5 )); then
-    print -u2 "zlog: rate_limit requires key, max_count, time_window, level, and message"
+    print -r -u2 -- "zlog: rate_limit requires key, max_count, time_window, level, and message"
     return 1
   fi
 
@@ -4672,14 +4675,24 @@ z::log::rate_limit() {
 
   # Validate max_count
   if [[ ! "$max_count" =~ '^[0-9]+$' ]] || (( max_count < 1 )); then
-    print -u2 "zlog: rate_limit max_count must be a positive integer"
+    print -r -u2 -- "zlog: rate_limit max_count must be a positive integer"
     return 1
   fi
 
   # Validate time_window
   if [[ ! "$time_window" =~ '^[0-9]+$' ]] || (( time_window < 1 )); then
-    print -u2 "zlog: rate_limit time_window must be a positive integer"
+    print -r -u2 -- "zlog: rate_limit time_window must be a positive integer"
     return 1
+  fi
+
+  __z::log::level_number "$level" || {
+    print -r -u2 -- "zlog: Invalid level for rate_limit: $level"
+    return 1
+  }
+  local level_num="$REPLY"
+
+  if ! __z::log::is_level_active "$level_num"; then
+    return 0
   fi
 
   local current_time=$EPOCHSECONDS
@@ -4774,7 +4787,7 @@ z::log::with_context() {
 
   # Validate input
   if (( $# < 2 || $# % 2 != 0 )); then
-    print -u2 "zlog: with_context requires even number of arguments (key-value pairs), got $#"
+    print -r -u2 -- "zlog: with_context requires even number of arguments (key-value pairs), got $#"
     return 1
   fi
 
@@ -4818,7 +4831,7 @@ z::log::with_context() {
   done
 
   if (( attempt >= max_attempts )); then
-    print -u2 "zlog: Failed to generate unique context ID after $max_attempts attempts"
+    print -r -u2 -- "zlog: Failed to generate unique context ID after $max_attempts attempts"
     REPLY=""
     return 1
   fi
@@ -4829,7 +4842,7 @@ z::log::with_context() {
 
   # Create logging functions for this context
   if ! __z::log::create_context_functions "$ctx_id"; then
-    print -u2 "zlog: Failed to create context functions for $ctx_id"
+    print -r -u2 -- "zlog: Failed to create context functions for $ctx_id"
     unset "_zlog_contexts[$ctx_id]"
     _zlog_contexts_order=("${(@)_zlog_contexts_order:#$ctx_id}")
     REPLY=""
@@ -4854,7 +4867,7 @@ __z::log::create_context_functions() {
 
   # Validate context ID format
   if [[ ! "$ctx_id" =~ ^zlog_ctx_[0-9]+_[0-9]+_[0-9]+$ ]]; then
-    print -u2 "zlog: Invalid context ID format: $ctx_id"
+    print -r -u2 -- "zlog: Invalid context ID format: $ctx_id"
     return 1
   fi
 
@@ -4885,7 +4898,7 @@ __z::log::create_context_function() {
 
   # Validate function name format
   if [[ ! "$func_name" =~ ^zlog_ctx_[0-9]+_[0-9]+_[0-9]+::(error|warn|info|debug)f?$ ]]; then
-    print -u2 "zlog: Invalid function name: $func_name"
+    print -r -u2 -- "zlog: Invalid function name: $func_name"
     return 1
   fi
 
@@ -5028,13 +5041,13 @@ z::log::remove_context() {
 
   # Validate input
   if [[ -z "$ctx_id" ]]; then
-    print -u2 "zlog: remove_context requires a context ID"
+    print -r -u2 -- "zlog: remove_context requires a context ID"
     return 1
   fi
 
   # Check if context exists
   if [[ -z "${_zlog_contexts[$ctx_id]-}" ]]; then
-    print -u2 "zlog: Context $ctx_id does not exist or already removed"
+    print -r -u2 -- "zlog: Context $ctx_id does not exist or already removed"
     return 1
   fi
 
@@ -5131,7 +5144,7 @@ z::log::benchmark() {
 
   # Validate input
   if (( $# < 2 )); then
-    print -u2 "zlog: benchmark requires operation name and command"
+    print -r -u2 -- "zlog: benchmark requires operation name and command"
     return 1
   fi
 
@@ -5140,7 +5153,7 @@ z::log::benchmark() {
 
   # Validate operation name
   if [[ -z "$operation_name" ]]; then
-    print -u2 "zlog: benchmark operation name cannot be empty"
+    print -r -u2 -- "zlog: benchmark operation name cannot be empty"
     return 1
   fi
 
@@ -5200,7 +5213,7 @@ z::log::benchmark_start() {
 
   # Validate input
   if [[ -z "$operation_name" ]]; then
-    print -u2 "zlog: benchmark_start requires operation name"
+    print -r -u2 -- "zlog: benchmark_start requires operation name"
     return 1
   fi
 
@@ -5232,7 +5245,7 @@ z::log::benchmark_start() {
   done
 
   if (( attempt >= max_attempts )); then
-    print -u2 "zlog: Failed to generate unique timer ID after $max_attempts attempts"
+    print -r -u2 -- "zlog: Failed to generate unique timer ID after $max_attempts attempts"
     REPLY=""
     return 1
   fi
@@ -5276,13 +5289,13 @@ z::log::benchmark_end() {
 
   # Validate input format
   if [[ ! "$timer_id" =~ ^zbt_[0-9]+_[0-9]+_[0-9]+$ ]]; then
-    print -u2 "zlog: Invalid timer ID format: $timer_id"
+    print -r -u2 -- "zlog: Invalid timer ID format: $timer_id"
     return 1
   fi
 
   # Check if timer exists
   if [[ -z "${_zlog_benchmark_timers[$timer_id]-}" ]]; then
-    print -u2 "zlog: Timer not found: $timer_id"
+    print -r -u2 -- "zlog: Timer not found: $timer_id"
     return 1
   fi
 
@@ -5338,7 +5351,7 @@ z::log::benchmark_block() {
 
   # Validate input
   if [[ -z "$operation_name" ]]; then
-    print -u2 "zlog: benchmark_block requires operation name"
+    print -r -u2 -- "zlog: benchmark_block requires operation name"
     return 1
   fi
 
@@ -5453,7 +5466,7 @@ z::log::list_timers() {
   setopt localoptions
 
   if (( ${#_zlog_benchmark_timer_order} == 0 )); then
-    print "No active timers"
+    print -r -- "No active timers"
     return 0
   fi
 
@@ -5469,7 +5482,7 @@ z::log::list_timers() {
       __z::log::format_duration "$elapsed_ms"
       local elapsed_str="$REPLY"
 
-      print "$timer_id $operation_name (elapsed: $elapsed_str)"
+      print -r -- "$timer_id $operation_name (elapsed: $elapsed_str)"
     fi
   done
 }
@@ -5620,7 +5633,7 @@ z::log::get_exit_hook_method() {
   setopt local_options no_unset 2>/dev/null || true
 
   if (( ! ${_zlog_state[cleanup_registered]:-0} )); then
-    print "none"
+    print -r -- "none"
     return 0
   fi
 
@@ -5630,7 +5643,7 @@ z::log::get_exit_hook_method() {
     hooks=("${zshexit_functions[@]}")
 
     if (( ${hooks[(I)z::log::cleanup]} )); then
-      print "zshexit"
+      print -r -- "zshexit"
       return 0
     fi
   fi
@@ -5640,13 +5653,13 @@ z::log::get_exit_hook_method() {
     local trapexit_body="${functions[TRAPEXIT]}"
 
     if [[ "$trapexit_body" == *"z::log::cleanup"* ]]; then
-      print "trapexit"
+      print -r -- "trapexit"
       return 0
     fi
   fi
 
   # If registered but not detected, assume trapexit (safest assumption)
-  print "trapexit"
+  print -r -- "trapexit"
   return 0
 }
 
@@ -5820,15 +5833,15 @@ z::log::show_config() {
   local color_mode="${_zlog_color_cache[mode]}"
   local hook_method="${_zlog_config[exit_hook_method]:-none}"
 
-  print "╔════════════════════════════════════════════════════════════════╗"
-  print "║                    ZLOG Configuration                          ║"
-  print "╠════════════════════════════════════════════════════════════════╣"
-  print "║ Console Level:      $(printf '%-40s' "$console_level_name ($console_level)")   ║"
-  print "║ File Level:         $(printf '%-40s' "$file_level_name ($file_level)")   ║"
-  print "║ Format:             $(printf '%-40s' "${_zlog_config[format]:-text}")   ║"
-  print "║ Log File:           $(printf '%-40s' "${_zlog_config[file]:-<none>}")   ║"
-  print "╠════════════════════════════════════════════════════════════════╣"
-  print "║ Rotation:           $(printf '%-40s' "$( (( ${_zlog_config[rotate]:-1} )) && echo 'enabled' || echo 'disabled' )")   ║"
+  print -r -- "╔════════════════════════════════════════════════════════════════╗"
+  print -r -- "║                    ZLOG Configuration                          ║"
+  print -r -- "╠════════════════════════════════════════════════════════════════╣"
+  print -r -- "║ Console Level:      $(printf '%-40s' "$console_level_name ($console_level)")   ║"
+  print -r -- "║ File Level:         $(printf '%-40s' "$file_level_name ($file_level)")   ║"
+  print -r -- "║ Format:             $(printf '%-40s' "${_zlog_config[format]:-text}")   ║"
+  print -r -- "║ Log File:           $(printf '%-40s' "${_zlog_config[file]:-<none>}")   ║"
+  print -r -- "╠════════════════════════════════════════════════════════════════╣"
+  print -r -- "║ Rotation:           $(printf '%-40s' "$( (( ${_zlog_config[rotate]:-1} )) && echo 'enabled' || echo 'disabled' )")   ║"
   __z::log::format_size "${_zlog_config[rotate_size]:-0}"
   print "║ Rotation Size:      $(printf '%-40s' "$REPLY")   ║"
   print "║ Rotation Keep:      $(printf '%-40s' "${_zlog_config[rotate_keep]:-5} files")   ║"
@@ -5866,7 +5879,7 @@ z::log::set_format() {
 
   # Validate input
   if [[ -z "$format" ]]; then
-    print -u2 "zlog: Format cannot be empty"
+    print -r -u2 -- "zlog: Format cannot be empty"
     return 1
   fi
 
@@ -5880,7 +5893,7 @@ z::log::set_format() {
       return 0
       ;;
     *)
-      print -u2 "zlog: Invalid format: $format (use 'text' or 'json')"
+      print -r -u2 -- "zlog: Invalid format: $format (use 'text' or 'json')"
       return 1
       ;;
   esac
@@ -5909,7 +5922,7 @@ z::log::set_level() {
   local level_num="$REPLY"
 
   if (( level_status != 0 )); then
-    print -u2 "zlog: Invalid log level: $level_input (use: error, warn, info, debug)"
+    print -r -u2 -- "zlog: Invalid log level: $level_input (use: error, warn, info, debug)"
     return 1
   fi
 
@@ -5935,7 +5948,7 @@ z::log::set_file_level() {
 
   # Validate input
   if [[ -z "$level_input" ]]; then
-    print -u2 "zlog: Level cannot be empty"
+    print -r -u2 -- "zlog: Level cannot be empty"
     return 1
   fi
 
@@ -5953,7 +5966,7 @@ z::log::set_file_level() {
   local level_num="$REPLY"
 
   if (( level_status != 0 )); then
-    print -u2 "zlog: Invalid file log level: $level_input"
+    print -r -u2 -- "zlog: Invalid file log level: $level_input"
     return 1
   fi
 
@@ -6016,7 +6029,7 @@ z::log::set_rotation() {
 
   # Validate enabled flag
   if [[ "$enabled" != "0" ]] && [[ "$enabled" != "1" ]]; then
-    print -u2 "zlog: Invalid rotation flag: $enabled (use 0 or 1)"
+    print -r -u2 -- "zlog: Invalid rotation flag: $enabled (use 0 or 1)"
     return 1
   fi
 
@@ -6026,13 +6039,13 @@ z::log::set_rotation() {
   local size_bytes="$REPLY"
 
   if (( parse_status != 0 )); then
-    print -u2 "zlog: Invalid max size: $max_size"
+    print -r -u2 -- "zlog: Invalid max size: $max_size"
     return 1
   fi
 
   # Validate keep_count
-  if [[ ! "$keep_count" =~ '^[0-9]+$' ]] || (( keep_count < 1 )); then
-    print -u2 "zlog: Invalid keep count: $keep_count (must be positive integer)"
+  if [[ ! "$keep_count" =~ '^[0-9]+$' ]]; then
+    print -r -u2 -- "zlog: Invalid keep count: $keep_count (must be non-negative integer)"
     return 1
   fi
 
@@ -6064,7 +6077,7 @@ z::log::setup() {
 
   # Validate file argument
   if [[ -z "$file" ]]; then
-    print -u2 "zlog: File path required (use '-' for console only)"
+    print -r -u2 -- "zlog: File path required (use '-' for console only)"
     return 1
   fi
 
