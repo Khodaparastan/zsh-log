@@ -174,15 +174,15 @@ test_core_logging_json() {
   z::log::reset
   z::log::setup "$TLOG" debug json
 
-  z::log::info "User login" user alice ip 10.0.0.1
+  z::log::info "User login" actor alice ip 10.0.0.1
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" '"level"'    "JSON has level field"
   assert_contains "$content" '"message"'  "JSON has message field"
   assert_contains "$content" '"timestamp"' "JSON has timestamp field"
   assert_contains "$content" 'User login' "JSON has message value"
-  assert_contains "$content" '"user"'     "JSON has user key"
-  assert_contains "$content" '"alice"'    "JSON has user value"
+  assert_contains "$content" '"actor"'    "JSON has actor key"
+  assert_contains "$content" '"alice"'    "JSON has actor value"
   assert_contains "$content" '"ip"'       "JSON has ip key"
   assert_contains "$content" '"10.0.0.1"' "JSON has ip value"
 
@@ -344,7 +344,7 @@ test_context_loggers() {
   z::log::reset
   z::log::setup "$TLOG" debug text
 
-  z::log::with_context "request_id" "abc-123" "user" "alice"
+  z::log::with_context "request_id" "abc-123" "actor" "alice"
   local ctx="$REPLY"
 
   ${ctx}::info  "Request received"
@@ -353,7 +353,7 @@ test_context_loggers() {
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "request_id=abc-123" "Context field request_id present"
-  assert_contains "$content" "user=alice"         "Context field user present"
+  assert_contains "$content" "actor=alice"        "Context field actor present"
   assert_contains "$content" "Request received"   "Context info message present"
   assert_contains "$content" "Slow query"         "Context warn message present"
   assert_contains "$content" "Handler failed"     "Context error message present"
