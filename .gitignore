@@ -9,7 +9,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
+.junie
+.zed
 # Zsh artifacts
 .zsh_history
 .zcompdump
