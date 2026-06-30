@@ -1326,8 +1326,6 @@ z::log::clear_sys_cache() {
 # Output: Sets reply as key/value pairs: hostname value username value pid value
 # Returns: 0 always
 #
-# Note: This is more efficient than calling each function separately
-#       when you need all three values
 ###
 __z::sys::get_all_info() {
   emulate -L zsh
@@ -2593,8 +2591,6 @@ __z::log::format_duration() {
 #   z::log::time_diff 1000 61500     # REPLY = "1m0.50s"
 #   z::log::time_diff 2000 1000      # REPLY = "<negative>" (error)
 #
-# Note: Does not support negative durations (returns error)
-#       For negative durations, swap start and end parameters
 ###
 z::log::time_diff() {
   emulate -L zsh
@@ -3453,16 +3449,12 @@ __z::log::format_json() {
   __z::log::truncate_message "$message"
   message="$REPLY"
 
-  # Update timestamp (cache-guarded: only rebuilds when the second changes)
+  # Update timestamp
   __z::log::update_timestamp
 
 
-  # Level name is always one of the fixed ASCII labels (ERROR/WARN/INFO/DEBUG)
-  # or the UNKNOWN fallback -- never contains JSON-special characters, so it
-  # needs no escaping at all.
   local escaped_level="${_ZLOG_LEVEL_NAMES[$level]:-UNKNOWN}"
 
-  # PID is a pure integer cached at init; read it directly.
   local pid="${_zlog_sys_cache[pid]}"
 
   # Hostname/username are per-process constants. Their JSON-escaped form is
@@ -3684,7 +3676,7 @@ __z::log::format_text() {
 #
 # Usage: __z::log::format <level> <message> [context_key context_val ...]
 #
-# Output: Sets REPLY with the formatted message (REPLY-passing, no subshell)
+# Output: Sets REPLY with the formatted message
 # Returns: 0 on success, 1 on invalid input
 ###
 __z::log::format() {
@@ -3871,8 +3863,6 @@ __z::log::engine() {
     return 0
   fi
 
-  # Format message with error handling. Do not use command substitution here:
-  # it would run the formatter in a subshell and discard cache updates.
   local formatted
   __z::log::format "$level" "$message" "$@"
   local format_status=$?
@@ -5225,14 +5215,14 @@ z::log::list_contexts() {
       local -a ctx_data
       ctx_data=("${(@0)_zlog_contexts[$ctx_id]}")
 
-      print -n "$ctx_id "
+      local line="$ctx_id "
 
       local i
       for (( i=1; i<=${#ctx_data}; i+=2 )); do
-        print -n "${ctx_data[i]}=${ctx_data[i+1]} "
+        line+="${ctx_data[i]}=${ctx_data[i+1]} "
       done
 
-      print -r --
+      print -r -- "$line"
     fi
   done
 }
@@ -6489,11 +6479,6 @@ __z::log::fast_write() {
   print -r -- "$message" >> "$logfile" 2>/dev/null
 }
 
-# NOTE: __z::log::engine_fast is defined once, earlier, under "OPTIMIZED FAST
-# ENGINE (Performance Mode)". A second, divergent copy used to live here and
-# silently shadowed the first (it gated file output on `_zlog_config[file]`
-# instead of the maintained `_zlog_state[file_enabled]` fast-path flag). It was
-# removed to eliminate the behavioral ambiguity; keep a single source of truth.
 
 ###
 # Simplified formatter for messages without context (90% of cases)
