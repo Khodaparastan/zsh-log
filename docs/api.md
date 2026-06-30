@@ -1899,91 +1899,91 @@ z::log::get_stats
 
 ## Function Index
 
-| Function | Category | Description |
-|---|---|---|
-| `z::log::setup` | Config | One-call quick start |
-| `z::log::error` | Core | Log error (level 0) |
-| `z::log::warn` | Core | Log warning (level 1) |
-| `z::log::info` | Core | Log info (level 2) |
-| `z::log::debug` | Core | Log debug (level 3) |
-| `z::log::log` | Core | Log at named/numeric level |
-| `z::log::errorf` | Printf | Printf-style error |
-| `z::log::warnf` | Printf | Printf-style warn |
-| `z::log::infof` | Printf | Printf-style info |
-| `z::log::debugf` | Printf | Printf-style debug |
-| `z::log::if_error` | Guards | Is error level active? |
-| `z::log::if_warn` | Guards | Is warn level active? |
-| `z::log::if_info` | Guards | Is info level active? |
-| `z::log::if_debug` | Guards | Is debug level active? |
-| `z::log::with_level` | Control | Temp level change for command |
-| `z::log::silent` | Control | Suppress all logging for command |
-| `z::log::always` | Control | Force log regardless of level |
-| `z::log::once` | Dedup | Log only first occurrence |
-| `z::log::clear_once` | Dedup | Reset once markers |
-| `z::log::rate_limit` | Dedup | Max N logs per time window |
-| `z::log::clear_rate_limits` | Dedup | Reset rate limit counters |
-| `z::log::with_context` | Context | Create context logger |
-| `z::log::remove_context` | Context | Remove context logger |
-| `z::log::remove_all_contexts` | Context | Remove all contexts |
-| `z::log::list_contexts` | Context | List active contexts |
-| `z::log::benchmark` | Bench | Time a command |
-| `z::log::benchmark_start` | Bench | Start manual timer |
-| `z::log::benchmark_end` | Bench | Stop timer and log |
-| `z::log::benchmark_block` | Bench | Time a heredoc block |
-| `z::log::benchmark_now` | Bench | Get current ms timestamp |
-| `z::log::benchmark_elapsed` | Bench | Elapsed since start |
-| `z::log::list_timers` | Bench | List active timers |
-| `z::log::clear_timers` | Bench | Remove all timers |
-| `z::log::get_timestamp` | Time | Get timestamp in any format |
-| `z::log::set_timestamp_format` | Time | Set strftime format |
-| `z::log::get_timestamp_format` | Time | Get current format |
-| `z::log::reset_timestamp_format` | Time | Reset to default |
-| `z::log::format_epoch` | Time | Format a Unix epoch |
-| `z::log::time_diff` | Time | Duration between two ms timestamps |
-| `z::log::time_diff_signed` | Time | Duration (supports negative) |
-| `z::log::enable_timestamp_cache` | Time | Enable caching (default) |
-| `z::log::disable_timestamp_cache` | Time | Disable caching |
-| `z::log::is_timestamp_cache_enabled` | Time | Check cache state |
-| `z::log::set_level` | Config | Set console level |
-| `z::log::get_level` | Config | Get console level |
-| `z::log::set_file_level` | Config | Set file level |
-| `z::log::get_file_level` | Config | Get file level |
-| `z::log::set_format` | Config | Set output format |
-| `z::log::get_format` | Config | Get output format |
-| `z::log::set_file` | Config | Set log file path |
-| `z::log::get_file` | Config | Get log file path |
-| `z::log::show_config` | Config | Print config table |
-| `z::log::reset` | Config | Restore all defaults |
-| `z::log::set_max_message_size` | Config | Set message size limit |
-| `z::log::get_max_message_size` | Config | Get message size limit |
-| `z::log::set_truncate_marker` | Config | Set truncation suffix |
-| `z::log::get_truncate_marker` | Config | Get truncation suffix |
-| `z::log::set_rotation` | Rotation | Configure rotation |
-| `z::log::set_max_size` | Rotation | Set max file size (bytes) |
-| `z::log::set_max_files` | Rotation | Set files to keep |
-| `z::log::set_rotation_lock_timeout` | Rotation | Set lock timeout |
-| `z::log::enable_buffering` | Buffer | Enable buffering |
-| `z::log::disable_buffering` | Buffer | Disable buffering |
-| `z::log::flush` | Buffer | Flush buffer to file |
-| `z::log::get_buffer_count` | Buffer | Count buffered messages |
-| `z::log::is_buffered` | Buffer | Is buffering active? |
-| `z::log::set_buffer_size` | Buffer | Set auto-flush threshold |
-| `z::log::enable_async` | Async | Start async worker |
-| `z::log::disable_async` | Async | Stop async worker |
-| `z::log::is_async` | Async | Is async active? |
-| `z::log::enable_performance_mode` | Perf | Use fast engine |
-| `z::log::disable_performance_mode` | Perf | Restore normal engine |
-| `z::log::colorize` | Color | Apply color to text |
-| `z::log::set_color_mode` | Color | Override color detection |
-| `z::log::get_color_mode` | Color | Get current color mode |
-| `z::log::show_colors` | Color | Print color palette |
-| `z::log::get_stats` | Stats | Print statistics |
-| `z::log::reset_stats` | Stats | Reset counters |
-| `z::log::clear_sys_cache` | Stats | Clear hostname/user/pid cache |
-| `z::log::cleanup` | Cleanup | Release all resources |
-| `z::log::register_cleanup` | Cleanup | Register exit hook |
-| `z::log::unregister_cleanup` | Cleanup | Remove exit hook |
-| `z::log::get_exit_hook_method` | Cleanup | Get hook method |
-| `z::log::enable_debug_mode` | Debug | Enable internal diagnostics |
-| `z::log::disable_debug_mode` | Debug | Disable internal diagnostics |
-| `z::log::is_debug_mode` | Debug | Is debug mode active? |
+| Function                             | Category | Description                        |
+|--------------------------------------|----------|------------------------------------|
+| `z::log::setup`                      | Config   | One-call quick start               |
+| `z::log::error`                      | Core     | Log error (level 0)                |
+| `z::log::warn`                       | Core     | Log warning (level 1)              |
+| `z::log::info`                       | Core     | Log info (level 2)                 |
+| `z::log::debug`                      | Core     | Log debug (level 3)                |
+| `z::log::log`                        | Core     | Log at named/numeric level         |
+| `z::log::errorf`                     | Printf   | Printf-style error                 |
+| `z::log::warnf`                      | Printf   | Printf-style warn                  |
+| `z::log::infof`                      | Printf   | Printf-style info                  |
+| `z::log::debugf`                     | Printf   | Printf-style debug                 |
+| `z::log::if_error`                   | Guards   | Is error level active?             |
+| `z::log::if_warn`                    | Guards   | Is warn level active?              |
+| `z::log::if_info`                    | Guards   | Is info level active?              |
+| `z::log::if_debug`                   | Guards   | Is debug level active?             |
+| `z::log::with_level`                 | Control  | Temp level change for command      |
+| `z::log::silent`                     | Control  | Suppress all logging for command   |
+| `z::log::always`                     | Control  | Force log regardless of level      |
+| `z::log::once`                       | Dedup    | Log only first occurrence          |
+| `z::log::clear_once`                 | Dedup    | Reset once markers                 |
+| `z::log::rate_limit`                 | Dedup    | Max N logs per time window         |
+| `z::log::clear_rate_limits`          | Dedup    | Reset rate limit counters          |
+| `z::log::with_context`               | Context  | Create context logger              |
+| `z::log::remove_context`             | Context  | Remove context logger              |
+| `z::log::remove_all_contexts`        | Context  | Remove all contexts                |
+| `z::log::list_contexts`              | Context  | List active contexts               |
+| `z::log::benchmark`                  | Bench    | Time a command                     |
+| `z::log::benchmark_start`            | Bench    | Start manual timer                 |
+| `z::log::benchmark_end`              | Bench    | Stop timer and log                 |
+| `z::log::benchmark_block`            | Bench    | Time a heredoc block               |
+| `z::log::benchmark_now`              | Bench    | Get current ms timestamp           |
+| `z::log::benchmark_elapsed`          | Bench    | Elapsed since start                |
+| `z::log::list_timers`                | Bench    | List active timers                 |
+| `z::log::clear_timers`               | Bench    | Remove all timers                  |
+| `z::log::get_timestamp`              | Time     | Get timestamp in any format        |
+| `z::log::set_timestamp_format`       | Time     | Set strftime format                |
+| `z::log::get_timestamp_format`       | Time     | Get current format                 |
+| `z::log::reset_timestamp_format`     | Time     | Reset to default                   |
+| `z::log::format_epoch`               | Time     | Format a Unix epoch                |
+| `z::log::time_diff`                  | Time     | Duration between two ms timestamps |
+| `z::log::time_diff_signed`           | Time     | Duration (supports negative)       |
+| `z::log::enable_timestamp_cache`     | Time     | Enable caching (default)           |
+| `z::log::disable_timestamp_cache`    | Time     | Disable caching                    |
+| `z::log::is_timestamp_cache_enabled` | Time     | Check cache state                  |
+| `z::log::set_level`                  | Config   | Set console level                  |
+| `z::log::get_level`                  | Config   | Get console level                  |
+| `z::log::set_file_level`             | Config   | Set file level                     |
+| `z::log::get_file_level`             | Config   | Get file level                     |
+| `z::log::set_format`                 | Config   | Set output format                  |
+| `z::log::get_format`                 | Config   | Get output format                  |
+| `z::log::set_file`                   | Config   | Set log file path                  |
+| `z::log::get_file`                   | Config   | Get log file path                  |
+| `z::log::show_config`                | Config   | Print config table                 |
+| `z::log::reset`                      | Config   | Restore all defaults               |
+| `z::log::set_max_message_size`       | Config   | Set message size limit             |
+| `z::log::get_max_message_size`       | Config   | Get message size limit             |
+| `z::log::set_truncate_marker`        | Config   | Set truncation suffix              |
+| `z::log::get_truncate_marker`        | Config   | Get truncation suffix              |
+| `z::log::set_rotation`               | Rotation | Configure rotation                 |
+| `z::log::set_max_size`               | Rotation | Set max file size (bytes)          |
+| `z::log::set_max_files`              | Rotation | Set files to keep                  |
+| `z::log::set_rotation_lock_timeout`  | Rotation | Set lock timeout                   |
+| `z::log::enable_buffering`           | Buffer   | Enable buffering                   |
+| `z::log::disable_buffering`          | Buffer   | Disable buffering                  |
+| `z::log::flush`                      | Buffer   | Flush buffer to file               |
+| `z::log::get_buffer_count`           | Buffer   | Count buffered messages            |
+| `z::log::is_buffered`                | Buffer   | Is buffering active?               |
+| `z::log::set_buffer_size`            | Buffer   | Set auto-flush threshold           |
+| `z::log::enable_async`               | Async    | Start async worker                 |
+| `z::log::disable_async`              | Async    | Stop async worker                  |
+| `z::log::is_async`                   | Async    | Is async active?                   |
+| `z::log::enable_performance_mode`    | Perf     | Use fast engine                    |
+| `z::log::disable_performance_mode`   | Perf     | Restore normal engine              |
+| `z::log::colorize`                   | Color    | Apply color to text                |
+| `z::log::set_color_mode`             | Color    | Override color detection           |
+| `z::log::get_color_mode`             | Color    | Get current color mode             |
+| `z::log::show_colors`                | Color    | Print color palette                |
+| `z::log::get_stats`                  | Stats    | Print statistics                   |
+| `z::log::reset_stats`                | Stats    | Reset counters                     |
+| `z::log::clear_sys_cache`            | Stats    | Clear hostname/user/pid cache      |
+| `z::log::cleanup`                    | Cleanup  | Release all resources              |
+| `z::log::register_cleanup`           | Cleanup  | Register exit hook                 |
+| `z::log::unregister_cleanup`         | Cleanup  | Remove exit hook                   |
+| `z::log::get_exit_hook_method`       | Cleanup  | Get hook method                    |
+| `z::log::enable_debug_mode`          | Debug    | Enable internal diagnostics        |
+| `z::log::disable_debug_mode`         | Debug    | Disable internal diagnostics       |
+| `z::log::is_debug_mode`              | Debug    | Is debug mode active?              |

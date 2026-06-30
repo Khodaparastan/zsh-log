@@ -7,7 +7,7 @@
 # ==============================================================================
 
 emulate -L zsh
-setopt err_return no_unset pipe_fail
+setopt no_unset pipe_fail
 
 SCRIPT_DIR="${0:A:h}"
 source "${SCRIPT_DIR}/../zlog"
@@ -21,13 +21,13 @@ typeset -ga _t_failures=()
 
 _t_ok() {
   local desc="$1"
-  (( _t_count++ )); (( _t_passed++ ))
+  (( ++_t_count )); (( ++_t_passed ))
   print "  ✓ $desc"
 }
 
 _t_fail() {
   local desc="$1" detail="${2:-}"
-  (( _t_count++ )); (( _t_failed++ ))
+  (( ++_t_count )); (( ++_t_failed ))
   _t_failures+=("$desc")
   print "  ✗ $desc"
   [[ -n "$detail" ]] && print "    $detail"
@@ -147,6 +147,7 @@ test_core_logging_text() {
   z::log::warn  "High memory"   used_mb 1800
   z::log::info  "Server ready"  port 8080
   z::log::debug "Cache miss"    key session_42
+  z::log::info  "-n"            opt -u2 path 'C:\tmp\value'
 
   local content; content=$(cat "$TLOG")
 
@@ -160,6 +161,9 @@ test_core_logging_text() {
   assert_contains "$content" "used_mb=1800"  "KV pair used_mb present"
   assert_contains "$content" "port=8080"     "KV pair port present"
   assert_contains "$content" "key=session_42" "KV pair key present"
+  assert_contains "$content" "-n"            "Option-like text message emitted literally"
+  assert_contains "$content" "opt=-u2"       "Option-like text context emitted literally"
+  assert_contains "$content" 'path=C:\tmp\value' "Text context backslashes emitted literally"
 
   z::log::reset; cleanup_log
 }
@@ -174,17 +178,21 @@ test_core_logging_json() {
   z::log::reset
   z::log::setup "$TLOG" debug json
 
-  z::log::info "User login" user alice ip 10.0.0.1
+  z::log::info "User login" actor alice ip 10.0.0.1
+  z::log::info "--" path 'C:\tmp\value' opt -n
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" '"level"'    "JSON has level field"
   assert_contains "$content" '"message"'  "JSON has message field"
   assert_contains "$content" '"timestamp"' "JSON has timestamp field"
   assert_contains "$content" 'User login' "JSON has message value"
-  assert_contains "$content" '"user"'     "JSON has user key"
-  assert_contains "$content" '"alice"'    "JSON has user value"
+  assert_contains "$content" '"actor"'    "JSON has actor key"
+  assert_contains "$content" '"alice"'    "JSON has actor value"
   assert_contains "$content" '"ip"'       "JSON has ip key"
   assert_contains "$content" '"10.0.0.1"' "JSON has ip value"
+  assert_contains "$content" '"message":"\u002d\u002d"' "Option-like JSON message emitted as data"
+  assert_contains "$content" '"opt":"\u002dn"'           "Option-like JSON context emitted as data"
+  assert_contains "$content" '"path":"C:\\tmp\\value"' "JSON context backslashes escaped"
 
   z::log::reset; cleanup_log
 }
@@ -344,20 +352,31 @@ test_context_loggers() {
   z::log::reset
   z::log::setup "$TLOG" debug text
 
-  z::log::with_context "request_id" "abc-123" "user" "alice"
+  z::log::with_context "request_id" "abc-123" "actor" "alice"
   local ctx="$REPLY"
 
-  ${ctx}::info  "Request received"
-  ${ctx}::warn  "Slow query" duration_ms 1500
-  ${ctx}::error "Handler failed" code 500
+  ${ctx}::info   "Request received"
+  ${ctx}::warn   "Slow query" duration_ms 1500
+  ${ctx}::error  "Handler failed" code 500
+  ${ctx}::infof  "Processed %d items in %.2fs" 42 1.5
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "request_id=abc-123" "Context field request_id present"
-  assert_contains "$content" "user=alice"         "Context field user present"
+  assert_contains "$content" "actor=alice"        "Context field actor present"
   assert_contains "$content" "Request received"   "Context info message present"
   assert_contains "$content" "Slow query"         "Context warn message present"
   assert_contains "$content" "Handler failed"     "Context error message present"
   assert_contains "$content" "duration_ms=1500"   "Extra KV on context call present"
+  assert_contains "$content" "Processed 42 items in 1.50s" "Context printf (f) variant formats correctly"
+
+  # Eval-free context surface (audit M5/m4): every per-context function must be a
+  # thin trampoline forwarding to the single shared dispatcher, not a body of
+  # generated logic. Assert the body is exactly the dispatcher call.
+  local info_body; info_body=$(functions "${ctx}::info")
+  assert_contains "$info_body" "__z::log::ctx_dispatch" "Context fn forwards to shared dispatcher"
+  local has_zlog_logic=0
+  [[ "$info_body" == *"_zlog_contexts"* ]] && has_zlog_logic=1
+  assert_eq "0" "$has_zlog_logic" "Context fn carries no inlined logic (single source of truth)"
 
   z::log::remove_context "$ctx"
 
@@ -499,6 +518,17 @@ test_file_rotation() {
   [[ -f "$TLOG" ]]
   assert_rc 0 $? "Log file exists after writes"
 
+  local size_probe="${TLOG}.size_probe"
+  print -n "0123456789" > "$size_probe"   # exactly 10 bytes
+  __z::log::get_file_size "$size_probe"
+  assert_eq "10" "$REPLY" "get_file_size returns exact byte count"
+  if zmodload -e zsh/stat 2>/dev/null || zmodload zsh/stat 2>/dev/null; then
+    assert_eq "zstat" "${_zlog_state[stat_cmd]}" "get_file_size uses fork-free zstat builtin"
+  fi
+  __z::log::get_file_size "${TLOG}.does_not_exist"
+  assert_rc 1 $? "get_file_size returns 1 for missing file"
+  rm -f "$size_probe"
+
   z::log::reset; cleanup_log
 }
 
@@ -539,11 +569,16 @@ test_performance_mode() {
 
   # Capture console output (fast engine writes to stderr)
   local console_out
-  console_out=$(z::log::info "perf-mode-msg" key val 2>&1)
+  console_out=$(z::log::info "-n" path 'C:\tmp\perf' 2>&1)
 
   z::log::disable_performance_mode
 
-  assert_contains "$console_out" "perf-mode-msg" "Messages logged in performance mode"
+  local perf_content; perf_content=$(cat "$perf_log")
+
+  assert_contains "$console_out" "-n" "Option-like messages logged in performance mode console output"
+  assert_contains "$console_out" 'path=C:\tmp\perf' "Backslashes preserved in performance mode console output"
+  assert_contains "$perf_content" "-n" "Option-like messages logged in performance mode file output"
+  assert_contains "$perf_content" 'path=C:\tmp\perf' "Backslashes preserved in performance mode file output"
   assert_eq "0" "${_zlog_config[debug_mode]}" "debug_mode disabled in performance mode aftermath"
 
   z::log::reset
@@ -576,6 +611,7 @@ test_async_logging() {
   for i in {1..5}; do
     z::log::info "async-msg-$i"
   done
+  z::log::info "--" path 'C:\tmp\async' opt -n
 
   z::log::disable_async
 
@@ -586,6 +622,9 @@ test_async_logging() {
   sleep 0.2
   local content; content=$(cat "$async_log" 2>/dev/null || print "")
   assert_contains "$content" "async-msg" "Async messages written to log file"
+  assert_contains "$content" "--" "Option-like async message written literally"
+  assert_contains "$content" 'path=C:\tmp\async' "Async context backslashes written literally"
+  assert_contains "$content" "opt=-n" "Option-like async context written literally"
 
   z::log::reset
   rm -f "$async_log"
