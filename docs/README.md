@@ -69,10 +69,10 @@ That's it. No package manager, no dependencies, no compilation. The file is self
 source ./zlog
 
 # Console-only logging at INFO level (the default)
-z::log::info  "Application started"
-z::log::debug "This won't show at INFO level"
-z::log::warn  "Disk space is low"
-z::log::error "Failed to connect"
+zlog::info  "Application started"
+zlog::debug "This won't show at INFO level"
+zlog::warn  "Disk space is low"
+zlog::error "Failed to connect"
 ```
 
 Output:
@@ -86,7 +86,7 @@ Output:
 To configure a log file, level, and format in one call:
 
 ```zsh
-z::log::setup "/var/log/myapp.log" debug json
+zlog::setup "/var/log/myapp.log" debug json
 ```
 
 ---
@@ -97,24 +97,24 @@ Four levels, in order of severity:
 
 | Level   | Function          | When to use |
 |---------|-------------------|-------------|
-| `error` | `z::log::error`   | Something broke. Needs immediate attention. |
-| `warn`  | `z::log::warn`    | Something unexpected, but recoverable. |
-| `info`  | `z::log::info`    | Normal operational events. |
-| `debug` | `z::log::debug`   | Detailed diagnostic information. |
+| `error` | `zlog::error`   | Something broke. Needs immediate attention. |
+| `warn`  | `zlog::warn`    | Something unexpected, but recoverable. |
+| `info`  | `zlog::info`    | Normal operational events. |
+| `debug` | `zlog::debug`   | Detailed diagnostic information. |
 
 The active level acts as a **minimum threshold** — messages below it are silently dropped with zero overhead.
 
 ```zsh
-z::log::set_level warn    # only warn and error will be logged
-z::log::set_level debug   # log everything
-z::log::set_level info    # default
+zlog::set_level warn    # only warn and error will be logged
+zlog::set_level debug   # log everything
+zlog::set_level info    # default
 ```
 
 You can also set **separate levels** for console and file output:
 
 ```zsh
-z::log::set_level       debug   # console: everything
-z::log::set_file_level  error   # file: only errors
+zlog::set_level       debug   # console: everything
+zlog::set_file_level  error   # file: only errors
 ```
 
 ---
@@ -134,7 +134,7 @@ Human-readable, color-coded output. Colors are automatically disabled when outpu
 Machine-readable, one object per line. Ideal for log aggregators (Datadog, Loki, Splunk).
 
 ```zsh
-z::log::set_format json
+zlog::set_format json
 ```
 
 ```json
@@ -150,7 +150,7 @@ Switch formats at any time — even mid-script.
 Append structured fields to any log message as trailing `key value` pairs:
 
 ```zsh
-z::log::info "Request completed" \
+zlog::info "Request completed" \
     method  GET \
     path    /api/users \
     status  200 \
@@ -174,7 +174,7 @@ Fields are always the last arguments. Any even number of trailing args after the
 ## Writing to a File
 
 ```zsh
-z::log::set_file "/var/log/myapp.log"
+zlog::set_file "/var/log/myapp.log"
 ```
 
 From this point, every log message goes to **both** the console and the file. The file always receives plain text (no ANSI color codes), regardless of the console format.
@@ -183,7 +183,7 @@ From this point, every log message goes to **both** the console and the file. Th
 
 ```zsh
 # Rotate at 50 MB, keep 7 old files
-z::log::set_rotation 1 "50MB" 7
+zlog::set_rotation 1 "50MB" 7
 ```
 
 Rotation is multi-process safe (uses a lock file). Supported size units: `KB`, `MB`, `GB`.
@@ -196,7 +196,7 @@ A context logger is a namespaced logger that automatically appends a fixed set o
 
 ```zsh
 # Create a context logger with fixed fields
-z::log::with_context "request_id" "req-abc123" "user" "alice"
+zlog::with_context "request_id" "req-abc123" "user" "alice"
 local ctx="$REPLY"
 
 # Use it exactly like the global logger
@@ -206,7 +206,7 @@ ${ctx}::warn  "Slow query"          duration_ms 320
 ${ctx}::error "Payment failed"      code 402
 
 # Clean up when done
-z::log::remove_context "$ctx"
+zlog::remove_context "$ctx"
 ```
 
 Every message from this context automatically includes `request_id=req-abc123 user=alice` — you never have to repeat those fields.
@@ -218,10 +218,10 @@ Every message from this context automatically includes `request_id=req-abc123 us
 For dynamic messages with formatting, use the `f`-suffixed variants:
 
 ```zsh
-z::log::infof  "Processed %d records in %.2f seconds" $count $elapsed
-z::log::debugf "Cache hit ratio: %.1f%%" $ratio
-z::log::warnf  "Retry %d/%d for host %s" $attempt $max_retries $host
-z::log::errorf "Exit code %d from command: %s" $rc "$cmd"
+zlog::infof  "Processed %d records in %.2f seconds" $count $elapsed
+zlog::debugf "Cache hit ratio: %.1f%%" $ratio
+zlog::warnf  "Retry %d/%d for host %s" $attempt $max_retries $host
+zlog::errorf "Exit code %d from command: %s" $rc "$cmd"
 ```
 
 These accept the same format strings as `printf`.
@@ -233,20 +233,20 @@ These accept the same format strings as `printf`.
 ### Temporarily change the log level
 
 ```zsh
-z::log::with_level debug my_verbose_function arg1 arg2
+zlog::with_level debug my_verbose_function arg1 arg2
 # Level is restored automatically after the function returns
 ```
 
 ### Silence all logging for a block
 
 ```zsh
-z::log::silent noisy_third_party_function
+zlog::silent noisy_third_party_function
 ```
 
 ### Force a message through regardless of level
 
 ```zsh
-z::log::always "Startup complete — version $VERSION"
+zlog::always "Startup complete — version $VERSION"
 ```
 
 ---
@@ -258,7 +258,7 @@ Prevent log flooding in hot loops:
 ```zsh
 # Log at most 5 times per 60 seconds for this key
 while true; do
-    z::log::rate_limit "health_check" 5 60 warn "Service degraded" host "$target"
+    zlog::rate_limit "health_check" 5 60 warn "Service degraded" host "$target"
     sleep 1
 done
 ```
@@ -267,7 +267,7 @@ Log a message exactly once per script run:
 
 ```zsh
 for item in "${items[@]}"; do
-    z::log::once "deprecation_notice" warn "Flag --legacy is deprecated"
+    zlog::once "deprecation_notice" warn "Flag --legacy is deprecated"
     process "$item"
 done
 # The warning appears only on the first iteration
@@ -280,25 +280,25 @@ done
 ### Wrap a command
 
 ```zsh
-z::log::benchmark "database_seed" run_migrations --env production
+zlog::benchmark "database_seed" run_migrations --env production
 # Logs: [INFO] database_seed completed  duration=1.23s
 ```
 
 ### Manual start/stop
 
 ```zsh
-z::log::benchmark_start "image_resize"
+zlog::benchmark_start "image_resize"
 local timer="$REPLY"
 
 convert input.png -resize 800x600 output.png
 
-z::log::benchmark_end "$timer"
+zlog::benchmark_end "$timer"
 ```
 
 ### Inline block
 
 ```zsh
-z::log::benchmark_block "data_processing" <<'END'
+zlog::benchmark_block "data_processing" <<'END'
     for file in /data/*.csv; do
         process_csv "$file"
     done
@@ -314,13 +314,13 @@ Durations are formatted automatically: `µs`, `ms`, `s`, or `Xm Y.YYs`. Benchmar
 Batch file writes for high-throughput scenarios:
 
 ```zsh
-z::log::enable_buffering 200   # buffer up to 200 messages
+zlog::enable_buffering 200   # buffer up to 200 messages
 
 for i in {1..10000}; do
-    z::log::debug "Processing item $i"
+    zlog::debug "Processing item $i"
 done
 
-z::log::flush   # write all buffered messages at once
+zlog::flush   # write all buffered messages at once
 ```
 
 The buffer is flushed automatically on `ERROR` messages and on script exit (via `zshexit` hook).
@@ -332,12 +332,12 @@ The buffer is flushed automatically on `ERROR` messages and on script exit (via 
 Offload file I/O to a background worker to keep the main script fast:
 
 ```zsh
-z::log::enable_async
+zlog::enable_async
 
 # Your script continues immediately; log writes happen in the background
-z::log::info "This returns instantly"
+zlog::info "This returns instantly"
 
-z::log::disable_async   # graceful shutdown, waits up to 5s for the worker to finish
+zlog::disable_async   # graceful shutdown, waits up to 5s for the worker to finish
 ```
 
 > **Note:** Async logging is experimental. Avoid it in scripts that may be killed abruptly.
@@ -349,14 +349,14 @@ z::log::disable_async   # graceful shutdown, waits up to 5s for the worker to fi
 For scripts that log millions of messages, swap in the fast engine at runtime:
 
 ```zsh
-z::log::enable_performance_mode
+zlog::enable_performance_mode
 
 # Hot inner loop — uses the fast engine (~50µs vs ~150µs per message)
 for i in {1..1000000}; do
-    z::log::debug "tick $i"
+    zlog::debug "tick $i"
 done
 
-z::log::disable_performance_mode
+zlog::disable_performance_mode
 ```
 
 The fast engine skips recursion guards, level re-validation, and error handling. Use it only in controlled, high-throughput sections.
@@ -368,33 +368,33 @@ The fast engine skips recursion guards, level re-validation, and error handling.
 ### One-call setup
 
 ```zsh
-z::log::setup <file> [level] [format]
+zlog::setup <file> [level] [format]
 
-z::log::setup "-"                    # console only, INFO, text
-z::log::setup "/var/log/app.log"     # file + console, INFO, text
-z::log::setup "/var/log/app.log" debug json
+zlog::setup "-"                    # console only, INFO, text
+zlog::setup "/var/log/app.log"     # file + console, INFO, text
+zlog::setup "/var/log/app.log" debug json
 ```
 
 ### Individual setters
 
 ```zsh
-z::log::set_level        <level>          # error | warn | info | debug
-z::log::set_file         <path>           # enable file output
-z::log::set_file_level   <level>          # independent level for file
-z::log::set_format       <text|json>      # output format
-z::log::set_rotation     <1|0> <size> <keep>   # e.g. 1 "10MB" 5
-z::log::set_timestamp_format <strftime>   # e.g. "%H:%M:%S"
-z::log::enable_buffering [size]           # enable write buffering
-z::log::enable_async                      # enable async file I/O
-z::log::enable_performance_mode           # swap in fast engine
+zlog::set_level        <level>          # error | warn | info | debug
+zlog::set_file         <path>           # enable file output
+zlog::set_file_level   <level>          # independent level for file
+zlog::set_format       <text|json>      # output format
+zlog::set_rotation     <1|0> <size> <keep>   # e.g. 1 "10MB" 5
+zlog::set_timestamp_format <strftime>   # e.g. "%H:%M:%S"
+zlog::enable_buffering [size]           # enable write buffering
+zlog::enable_async                      # enable async file I/O
+zlog::enable_performance_mode           # swap in fast engine
 ```
 
 ### Inspect & reset
 
 ```zsh
-z::log::show_config    # pretty-print all current settings
-z::log::get_stats      # messages logged, dropped, rotations, errors
-z::log::reset          # restore all defaults
+zlog::show_config    # pretty-print all current settings
+zlog::get_stats      # messages logged, dropped, rotations, errors
+zlog::reset          # restore all defaults
 ```
 
 ---

@@ -16,7 +16,7 @@ assignees: ''
 
 ```zsh
 # Example of how you'd use the new feature
-z::log::your_new_function "example"
+zlog::your_new_function "example"
 ```
 
 ## Alternatives considered

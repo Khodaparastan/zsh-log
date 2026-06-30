@@ -23,12 +23,12 @@ typeset -g ERROR_LOG="$LOG_DIR/error.log"
 setup_logging() {
   mkdir -p "$LOG_DIR"
 
-  z::log::setup "$APP_LOG" info text
-  z::log::set_rotation 1 "10MB" 5
-  z::log::enable_buffering 100
-  z::log::register_cleanup
+  zlog::setup "$APP_LOG" info text
+  zlog::set_rotation 1 "10MB" 5
+  zlog::enable_buffering 100
+  zlog::register_cleanup
 
-  z::log::info "Application starting" \
+  zlog::info "Application starting" \
     name    "$APP_NAME" \
     version "$APP_VERSION" \
     log_dir "$LOG_DIR"
@@ -44,7 +44,7 @@ generate_request_id() {
 
 log_access() {
   local req_method="$1" req_path="$2" http_status="$3" duration_ms="$4" client_ip="$5"
-  local ts; ts=$(z::log::get_timestamp human)
+  local ts; ts=$(zlog::get_timestamp human)
   print "$ts $client_ip \"$req_method $req_path\" $http_status ${duration_ms}ms" >> "$ACCESS_LOG"
 }
 
@@ -62,7 +62,7 @@ handle_request() {
   generate_request_id
   local request_id="$REPLY"
 
-  z::log::with_context \
+  zlog::with_context \
     request_id "$request_id" \
     method     "$req_method" \
     path       "$req_path" \
@@ -98,7 +98,7 @@ handle_request() {
   local duration_ms=$(( (EPOCHREALTIME - start) * 1000 ))
 
   if (( duration_ms > 100 )); then
-    z::log::rate_limit "slow-req" 5 60 warn "Slow request" \
+    zlog::rate_limit "slow-req" 5 60 warn "Slow request" \
       path "$req_path" duration_ms "$duration_ms"
   fi
 
@@ -106,7 +106,7 @@ handle_request() {
 
   log_access "$req_method" "$req_path" "$http_status" "$duration_ms" "$client_ip"
 
-  z::log::remove_context "$ctx"
+  zlog::remove_context "$ctx"
 }
 
 ###############################################################################
@@ -127,10 +127,10 @@ log_system_stats() {
     app_log_size="${app_log_bytes}B"
   fi
 
-  z::log::info "System stats" \
+  zlog::info "System stats" \
     memory_kb    "$mem_kb" \
     app_log_size "$app_log_size" \
-    buffer_count "$(z::log::get_buffer_count)"
+    buffer_count "$(zlog::get_buffer_count)"
 }
 
 ###############################################################################
@@ -172,27 +172,27 @@ run_webserver_simulation() {
 
   print "\n\nSimulation complete."
 
-  z::log::flush
+  zlog::flush
 
-  z::log::colorize bold 'Application Log (last 10 lines):'
+  zlog::colorize bold 'Application Log (last 10 lines):'
   print "\n$REPLY"
-  z::log::colorize dim '────────────────────────────────────────────────────────────────'
+  zlog::colorize dim '────────────────────────────────────────────────────────────────'
   print "$REPLY"
   tail -10 "$APP_LOG" 2>/dev/null
-  z::log::colorize dim '────────────────────────────────────────────────────────────────'
+  zlog::colorize dim '────────────────────────────────────────────────────────────────'
   print "$REPLY"
 
-  z::log::colorize bold 'Access Log (last 10 lines):'
+  zlog::colorize bold 'Access Log (last 10 lines):'
   print "\n$REPLY"
-  z::log::colorize dim '────────────────────────────────────────────────────────────────'
+  zlog::colorize dim '────────────────────────────────────────────────────────────────'
   print "$REPLY"
   tail -10 "$ACCESS_LOG" 2>/dev/null
-  z::log::colorize dim '────────────────────────────────────────────────────────────────'
+  zlog::colorize dim '────────────────────────────────────────────────────────────────'
   print "$REPLY"
 
-  z::log::cleanup
+  zlog::cleanup
 
-  z::log::colorize green '✓ Example complete.'
+  zlog::colorize green '✓ Example complete.'
   print "\n$REPLY  Logs saved to: $LOG_DIR"
 }
 

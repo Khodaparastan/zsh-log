@@ -39,7 +39,7 @@
 graph TD
     User["User / Script"]
 
-    subgraph Public_API["Public API  (z::log::*)"]
+    subgraph Public_API["Public API  (zlog::*)"]
         Core["Core\nerror / warn / info / debug"]
         Printf["Printf-style\nerrorf / warnf / infof / debugf"]
         Control["Control-flow\nwith_level / silent / once / rate_limit"]
@@ -48,7 +48,7 @@ graph TD
         Cfg["Configuration\nsetup / set_level / set_format / reset"]
     end
 
-    subgraph Engine["Core Engine  (__z::log::engine)"]
+    subgraph Engine["Core Engine  (__zlog::engine)"]
         Guard["Recursion Guard"]
         LevelCheck["Level Filter"]
         Format["Formatter Pipeline"]
@@ -213,7 +213,7 @@ classDiagram
 
 ### Fast-Path Flags
 
-`__z::log::update_fast_flags` pre-computes three booleans into `_zlog_state` so every public log call can do a single integer check as its very first operation:
+`__zlog::update_fast_flags` pre-computes three booleans into `_zlog_state` so every public log call can do a single integer check as its very first operation:
 
 | Flag | Formula |
 |---|---|
@@ -238,17 +238,17 @@ sequenceDiagram
     File->>Globals: Declare constants (readonly)
     File->>Globals: Declare _zlog_config (if not set)
     File->>Globals: Declare _zlog_state, _zlog_stats, caches
-    File->>File: __z::log::init_globals()
+    File->>File: __zlog::init_globals()
     File->>Sys: Cache hostname, username, PID
     File->>File: Detect stat command (gnu/bsd/none)
     File->>File: Check strftime availability
-    File->>File: __z::log::update_fast_flags()
-    File->>File: __z::log::validate_globals()
+    File->>File: __zlog::update_fast_flags()
+    File->>File: __zlog::validate_globals()
     Note over File: Clamp all config values to valid ranges
-    File->>Colors: __z::log::init_colors()
+    File->>Colors: __zlog::init_colors()
     Colors->>Colors: detect_color_support() → none/basic/256/truecolor
     Colors->>Colors: Populate _zlog_colors[] with ANSI codes
-    File->>TS: __z::log::update_timestamp()
+    File->>TS: __zlog::update_timestamp()
     TS->>TS: Prime epoch/formatted/iso/ms cache
     File->>Sys: Cache hostname from $HOST/$HOSTNAME
     File->>Sys: Cache username from $USER/$USERNAME
@@ -296,7 +296,7 @@ The engine is the single central function that all public log calls delegate to.
 
 ```mermaid
 flowchart TD
-    Start([__z::log::engine\nlevel, message, kv...])
+    Start([__zlog::engine\nlevel, message, kv...])
 
     RG{"depth >= max_depth?"}
     RG_ERR["print recursion error\nreturn 1"]
@@ -313,7 +313,7 @@ flowchart TD
     BOTH{"should_console\nOR should_file?"}
     BOTH_EXIT["restore depth\nreturn 0"]
 
-    FMT["__z::log::format()\nlevel, message, kv pairs"]
+    FMT["__zlog::format()\nlevel, message, kv pairs"]
     FMT_ERR{"format failed?"}
     FALLBACK["Fallback: date + level + message"]
 
@@ -325,8 +325,8 @@ flowchart TD
 
     FILE{"should_file?"}
     BUF{"buffered mode?"}
-    BUF_ADD["__z::log::buffer_add()"]
-    WRITE["__z::log::write_file()"]
+    BUF_ADD["__zlog::buffer_add()"]
+    WRITE["__zlog::write_file()"]
     WRITE_FAIL["log error (max 5 times)"]
 
     RESTORE["restore depth"]
@@ -363,13 +363,13 @@ flowchart TD
 
 | Variant | Function | Speed | Safety |
 |---|---|---|---|
-| Normal | `__z::log::engine` | ~100–200µs | Full recursion guard, validation, error handling |
-| Fast | `__z::log::engine_fast` | ~50–80µs | No recursion guard, no validation, no error handling |
+| Normal | `__zlog::engine` | ~100–200µs | Full recursion guard, validation, error handling |
+| Fast | `__zlog::engine_fast` | ~50–80µs | No recursion guard, no validation, no error handling |
 
 Performance mode hot-swaps the engine at runtime by copying function bodies:
 ```zsh
-functions[__z::log::engine_original]="${functions[__z::log::engine]}"
-functions[__z::log::engine]="${functions[__z::log::engine_fast]}"
+functions[__zlog::engine_original]="${functions[__zlog::engine]}"
+functions[__zlog::engine]="${functions[__zlog::engine_fast]}"
 ```
 
 ---
@@ -378,15 +378,15 @@ functions[__z::log::engine]="${functions[__z::log::engine_fast]}"
 
 ```mermaid
 flowchart TD
-    Engine["__z::log::engine\nlevel, message, kv..."]
+    Engine["__zlog::engine\nlevel, message, kv..."]
 
     HasKV{"KV pairs\nprovided?"}
-    Simple["__z::log::format_simple\n(fast path, sets REPLY)"]
-    Full["__z::log::format\n(full path)"]
+    Simple["__zlog::format_simple\n(fast path, sets REPLY)"]
+    Full["__zlog::format\n(full path)"]
 
     FmtCheck{"_zlog_config[format]"}
-    Text["__z::log::format_text"]
-    JSON["__z::log::format_json"]
+    Text["__zlog::format_text"]
+    JSON["__zlog::format_json"]
 
     TTY{"stderr is TTY?"}
     Plain["Plain text\nno ANSI codes"]
@@ -436,7 +436,7 @@ Level names are right-padded to 5 characters for column alignment (`INFO `, `WAR
 }
 ```
 
-Reserved JSON field names (`timestamp`, `level`, `message`, `hostname`, `pid`, `user`) are **rejected** as context keys. Invalid characters are stripped by `__z::log::sanitize_context_key`.
+Reserved JSON field names (`timestamp`, `level`, `message`, `hostname`, `pid`, `user`) are **rejected** as context keys. Invalid characters are stripped by `__zlog::sanitize_context_key`.
 
 ---
 
@@ -444,7 +444,7 @@ Reserved JSON field names (`timestamp`, `level`, `message`, `hostname`, `pid`, `
 
 ```mermaid
 flowchart TD
-    Init["__z::log::init_colors()"]
+    Init["__zlog::init_colors()"]
 
     NoColor{"NO_COLOR\nenv set?"}
     NoColorOut["mode = none\nAll codes = empty string"]
@@ -507,7 +507,7 @@ flowchart TD
     Cache{"epoch ==\ncache[epoch]?"}
     Return["Use cached values\nformatted / iso / ms"]
 
-    Update["__z::log::update_timestamp()"]
+    Update["__zlog::update_timestamp()"]
     Strftime{"strftime\navailable?"}
     SF["strftime '%Y-%m-%d %H:%M:%S'\n→ cache[formatted]"]
     Date["date '+%Y-%m-%d %H:%M:%S'\n→ cache[formatted]"]
@@ -536,7 +536,7 @@ flowchart TD
 | `ms` | `1705329781234` | Millisecond epoch |
 | `epoch` | `1705329781` | Integer epoch |
 
-Custom format: `z::log::set_timestamp_format "%H:%M:%S"` — validated with a test `strftime` call before accepting.
+Custom format: `zlog::set_timestamp_format "%H:%M:%S"` — validated with a test `strftime` call before accepting.
 
 ---
 
@@ -544,16 +544,16 @@ Custom format: `z::log::set_timestamp_format "%H:%M:%S"` — validated with a te
 
 ```mermaid
 flowchart TD
-    Write["__z::log::write_file(message)"]
+    Write["__zlog::write_file(message)"]
 
     RotateCheck{"rotate=1 AND\nfile exists?"}
-    SizeCheck["__z::log::get_file_size()\nstat (gnu/bsd/none)"]
+    SizeCheck["__zlog::get_file_size()\nstat (gnu/bsd/none)"]
     SizeOver{"size >=\nrotate_size?"}
 
     Lock["Acquire lock file\nlogfile.lock\n(timeout: rotation_lock_timeout)"]
     LockFail["Log warning\nSkip rotation\nWrite anyway"]
 
-    Rotate["__z::log::rotate_file()"]
+    Rotate["__zlog::rotate_file()"]
     Shift["Shift: .log.4→.log.5\n.log.3→.log.4 ...\n.log→.log.1"]
     Prune["Delete files beyond\nrotate_keep count"]
     Unlock["Release lock file"]
@@ -606,13 +606,13 @@ Files beyond `rotate_keep` are deleted. The lock file (`app.log.lock`) prevents 
 stateDiagram-v2
     [*] --> Unbuffered : default
 
-    Unbuffered --> Buffered : z::log::enable_buffering [size]
-    Buffered --> Unbuffered : z::log::disable_buffering
+    Unbuffered --> Buffered : zlog::enable_buffering [size]
+    Buffered --> Unbuffered : zlog::disable_buffering
 
     state Buffered {
         [*] --> Accumulating
         Accumulating --> AutoFlush : level==ERROR OR count>=buffer_max
-        Accumulating --> ManualFlush : z::log::flush
+        Accumulating --> ManualFlush : zlog::flush
         Accumulating --> ExitFlush : process exit / signal
         AutoFlush --> Accumulating : buffer cleared
         ManualFlush --> Accumulating : buffer cleared
@@ -641,7 +641,7 @@ sequenceDiagram
     participant Worker as Background Worker\n(subshell)
     participant LogFile as Log File
 
-    Script->>zlog: z::log::enable_async()
+    Script->>zlog: zlog::enable_async()
     zlog->>FIFO: mkfifo /tmp/zlog_fifo_$$_RANDOM
     zlog->>Worker: spawn background subshell
     Worker->>FIFO: exec < fifo (open for reading)
@@ -649,13 +649,13 @@ sequenceDiagram
     zlog->>zlog: store async_pid, async_fd
 
     loop Every log message
-        Script->>zlog: z::log::info "msg"
+        Script->>zlog: zlog::info "msg"
         zlog->>FIFO: print -u async_fd "formatted line"
         FIFO->>Worker: line available
         Worker->>LogFile: print -r -- line >> logfile
     end
 
-    Script->>zlog: z::log::disable_async()
+    Script->>zlog: zlog::disable_async()
     zlog->>FIFO: print "__ASYNC_SHUTDOWN__"
     Worker->>Worker: break on sentinel
     Worker->>FIFO: rm -f fifo
@@ -673,7 +673,7 @@ Context loggers attach a fixed set of key-value pairs to every log call, without
 
 ```mermaid
 flowchart TD
-    Create["z::log::with_context\n'request_id' 'abc' 'user' 'john'"]
+    Create["zlog::with_context\n'request_id' 'abc' 'user' 'john'"]
     ID["Generate ID:\nzlog_ctx_PID_EPOCHSECONDS_RANDOM"]
     Store["_zlog_contexts[id] = 'request_id\0abc\0user\0john'"]
     Order["_zlog_contexts_order += id"]
@@ -685,9 +685,9 @@ flowchart TD
     Use["${ctx}::info 'User action'"]
     Lookup["Load KV pairs from\n_zlog_contexts[ctx]"]
     Merge["Merge with call-site KV pairs"]
-    Engine["__z::log::engine\nlevel, message, merged KV..."]
+    Engine["__zlog::engine\nlevel, message, merged KV..."]
 
-    Remove["z::log::remove_context ctx"]
+    Remove["zlog::remove_context ctx"]
     Unset["unfunction ctx::*\nunset _zlog_contexts[ctx]"]
 
     Create --> ID --> Store --> Order --> Limit
@@ -714,28 +714,28 @@ This avoids nested arrays and is split at call time with `${(s:\0:)ctx_string}`.
 ```mermaid
 flowchart TD
     subgraph Wrap["Wrap Mode"]
-        BW["z::log::benchmark 'name' cmd args"]
+        BW["zlog::benchmark 'name' cmd args"]
         BWS["Record start time\n(EPOCHREALTIME)"]
         BWR["Run cmd args"]
         BWE["Record end time\nCompute duration"]
-        BWL["z::log::info 'name completed'\n'duration' '42.3ms'"]
+        BWL["zlog::info 'name completed'\n'duration' '42.3ms'"]
         BW --> BWS --> BWR --> BWE --> BWL
     end
 
     subgraph Manual["Manual Mode"]
-        BS["z::log::benchmark_start 'name'"]
+        BS["zlog::benchmark_start 'name'"]
         BSS["timer_id = zbt_PID_EPOCH_RANDOM\n_zlog_benchmark_timers[id] = 'epoch|name'"]
         BSR["REPLY = timer_id"]
-        BE["z::log::benchmark_end timer_id"]
-        BEL["Lookup start time\nCompute duration\nz::log::info 'name' 'duration' '...'"]
+        BE["zlog::benchmark_end timer_id"]
+        BEL["Lookup start time\nCompute duration\nzlog::info 'name' 'duration' '...'"]
         BS --> BSS --> BSR
         BE --> BEL
     end
 
     subgraph Block["Block Mode"]
-        BB["z::log::benchmark_block 'name' <<'END'\n  code\nEND"]
+        BB["zlog::benchmark_block 'name' <<'END'\n  code\nEND"]
         BBE["eval code in subshell\ntime with EPOCHREALTIME"]
-        BBL["z::log::info 'name' 'duration' '...'"]
+        BBL["zlog::info 'name' 'duration' '...'"]
         BB --> BBE --> BBL
     end
 ```
@@ -758,7 +758,7 @@ All benchmark functions are **no-ops** when the INFO level is disabled — zero 
 ```mermaid
 flowchart TD
     subgraph RateLimit["Rate Limiting"]
-        RL["z::log::rate_limit\n'key' max_count window_secs level 'msg'"]
+        RL["zlog::rate_limit\n'key' max_count window_secs level 'msg'"]
         RLLoad["Load state:\n_zlog_rate_limits[key]\n= 'count|window_start'"]
         RLWindow{"Current time\n> window_start + window?"}
         RLReset["Reset: count=0\nwindow_start=now"]
@@ -773,7 +773,7 @@ flowchart TD
     end
 
     subgraph Once["Once Logging"]
-        OL["z::log::once 'key' level 'msg'"]
+        OL["zlog::once 'key' level 'msg'"]
         OLCheck{"_zlog_once_keys[key]\nexists?"}
         OLLog["Log the message\n_zlog_once_keys[key]=1"]
         OLSkip["Skip silently"]
@@ -789,7 +789,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph WithLevel["z::log::with_level level cmd"]
+    subgraph WithLevel["zlog::with_level level cmd"]
         WL1["Save current level"]
         WL2["Set level to arg"]
         WL3["Run cmd"]
@@ -797,7 +797,7 @@ flowchart LR
         WL1 --> WL2 --> WL3 --> WL4
     end
 
-    subgraph Silent["z::log::silent cmd"]
+    subgraph Silent["zlog::silent cmd"]
         SL1["Save level"]
         SL2["Set level = -1\n(nothing passes filter)"]
         SL3["Run cmd"]
@@ -805,7 +805,7 @@ flowchart LR
         SL1 --> SL2 --> SL3 --> SL4
     end
 
-    subgraph Always["z::log::always 'msg'"]
+    subgraph Always["zlog::always 'msg'"]
         AL1["Save level"]
         AL2["Set level = DEBUG (3)"]
         AL3["Log at DEBUG\n(passes all filters)"]
@@ -823,35 +823,35 @@ All three helpers save and restore `_zlog_config[level]` around the wrapped call
 ```mermaid
 flowchart TD
     subgraph QuickStart["Quick Start"]
-        Setup["z::log::setup file level format"]
+        Setup["zlog::setup file level format"]
         Setup --> SF["set_file()"]
         Setup --> SL["set_level()"]
         Setup --> SFmt["set_format()"]
     end
 
     subgraph Individual["Individual Setters"]
-        SL2["z::log::set_level\nerror/warn/info/debug or 0-3"]
-        SFL["z::log::set_file_level\nlevel or -1/console"]
-        SFile["z::log::set_file\npath or empty"]
-        SFmt2["z::log::set_format\ntext or json"]
-        SRot["z::log::set_rotation\nenabled max_size keep_count"]
-        SBuf["z::log::set_buffer_size\nsize"]
-        STS["z::log::set_timestamp_format\nstrftime pattern"]
+        SL2["zlog::set_level\nerror/warn/info/debug or 0-3"]
+        SFL["zlog::set_file_level\nlevel or -1/console"]
+        SFile["zlog::set_file\npath or empty"]
+        SFmt2["zlog::set_format\ntext or json"]
+        SRot["zlog::set_rotation\nenabled max_size keep_count"]
+        SBuf["zlog::set_buffer_size\nsize"]
+        STS["zlog::set_timestamp_format\nstrftime pattern"]
     end
 
     subgraph Validation["Input Validation"]
-        LV["__z::log::level_number()\nname or number → 0-3"]
-        SV["__z::log::parse_size()\n'10MB' → 10485760 bytes"]
+        LV["__zlog::level_number()\nname or number → 0-3"]
+        SV["__zlog::parse_size()\n'10MB' → 10485760 bytes"]
         FV["Test strftime call\nbefore accepting format"]
     end
 
     subgraph Output["Inspection"]
-        Show["z::log::show_config()\nBox-drawing table of all settings"]
-        Stats["z::log::show_stats()\nMessages logged, dropped, etc."]
+        Show["zlog::show_config()\nBox-drawing table of all settings"]
+        Stats["zlog::show_stats()\nMessages logged, dropped, etc."]
     end
 
     subgraph Reset["Reset"]
-        Rst["z::log::reset()\nFlush buffer\nRestore all defaults\nClear caches"]
+        Rst["zlog::reset()\nFlush buffer\nRestore all defaults\nClear caches"]
     end
 
     Individual --> Validation
@@ -859,7 +859,7 @@ flowchart TD
     Validation --> Output
 ```
 
-### Size Parsing (`__z::log::parse_size`)
+### Size Parsing (`__zlog::parse_size`)
 
 Accepts human-readable sizes and converts to bytes:
 
@@ -877,17 +877,17 @@ Accepts human-readable sizes and converts to bytes:
 
 ```mermaid
 flowchart TD
-    Enable["z::log::enable_buffering"]
+    Enable["zlog::enable_buffering"]
     Register{"cleanup_registered\n== 0?"}
-    Hook1["add-zsh-hook zshexit\n__z::log::cleanup"]
+    Hook1["add-zsh-hook zshexit\n__zlog::cleanup"]
     Hook2["TRAPEXIT function\n(fallback)"]
     Hook3["trap EXIT INT TERM HUP QUIT\n(last resort)"]
     Mark["cleanup_registered = 1"]
 
     Signal["Process receives\nEXIT / INT / TERM / HUP / QUIT"]
-    Cleanup["__z::log::cleanup()"]
-    Flush["z::log::flush()\nWrite all buffered lines"]
-    AsyncStop["z::log::disable_async()\nif async active"]
+    Cleanup["__zlog::cleanup()"]
+    Flush["zlog::flush()\nWrite all buffered lines"]
+    AsyncStop["zlog::disable_async()\nif async active"]
     CtxClean["Remove all context functions\nunfunction ctx::*"]
     Done["Exit"]
 
@@ -907,13 +907,13 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Normal["Normal Mode\n__z::log::engine\n~100-200µs/call"]
+    Normal["Normal Mode\n__zlog::engine\n~100-200µs/call"]
 
-    Enable["z::log::enable_performance_mode()"]
+    Enable["zlog::enable_performance_mode()"]
     Swap["functions[engine_original] = functions[engine]\nfunctions[engine] = functions[engine_fast]"]
-    Fast["Performance Mode\n__z::log::engine_fast\n~50-80µs/call"]
+    Fast["Performance Mode\n__zlog::engine_fast\n~50-80µs/call"]
 
-    Disable["z::log::disable_performance_mode()"]
+    Disable["zlog::disable_performance_mode()"]
     Restore["functions[engine] = functions[engine_original]\nunfunction engine_original"]
 
     Normal -->|enable| Enable --> Swap --> Fast
@@ -939,57 +939,57 @@ flowchart LR
 ### Naming Convention
 
 ```
-z::log::<verb>          Public API  (user-facing)
-__z::log::<verb>        Private     (internal, do not call directly)
+zlog::<verb>          Public API  (user-facing)
+__zlog::<verb>        Private     (internal, do not call directly)
 ```
 
 ### Core Logging
 
 ```zsh
-z::log::error  "message" [key val ...]
-z::log::warn   "message" [key val ...]
-z::log::info   "message" [key val ...]
-z::log::debug  "message" [key val ...]
-z::log::log    "level" "message" [key val ...]   # level by name or number
+zlog::error  "message" [key val ...]
+zlog::warn   "message" [key val ...]
+zlog::info   "message" [key val ...]
+zlog::debug  "message" [key val ...]
+zlog::log    "level" "message" [key val ...]   # level by name or number
 ```
 
 ### Printf-style
 
 ```zsh
-z::log::errorf "format %s %d" arg1 arg2
-z::log::warnf  "format %s %d" arg1 arg2
-z::log::infof  "format %s %d" arg1 arg2
-z::log::debugf "format %s %d" arg1 arg2
+zlog::errorf "format %s %d" arg1 arg2
+zlog::warnf  "format %s %d" arg1 arg2
+zlog::infof  "format %s %d" arg1 arg2
+zlog::debugf "format %s %d" arg1 arg2
 ```
 
 ### Control Flow
 
 ```zsh
-z::log::with_level  debug  my_function [args]
-z::log::silent             my_function [args]
-z::log::always      "Critical message"
-z::log::once        "unique-key"  info  "message"
-z::log::rate_limit  "key"  max_count  window_secs  level  "message"
+zlog::with_level  debug  my_function [args]
+zlog::silent             my_function [args]
+zlog::always      "Critical message"
+zlog::once        "unique-key"  info  "message"
+zlog::rate_limit  "key"  max_count  window_secs  level  "message"
 ```
 
 ### Context Loggers
 
 ```zsh
-z::log::with_context "key1" "val1" "key2" "val2"
+zlog::with_context "key1" "val1" "key2" "val2"
 local ctx="$REPLY"
 ${ctx}::info   "message" [extra_key extra_val ...]
 ${ctx}::infof  "format %s" arg
 ${ctx}::error / warn / debug / errorf / warnf / debugf
-z::log::remove_context "$ctx"
+zlog::remove_context "$ctx"
 ```
 
 ### Benchmarking
 
 ```zsh
-z::log::benchmark        "label"  command [args]
-z::log::benchmark_start  "label"  ;  timer="$REPLY"
-z::log::benchmark_end    "$timer"
-z::log::benchmark_block  "label"  <<'END'
+zlog::benchmark        "label"  command [args]
+zlog::benchmark_start  "label"  ;  timer="$REPLY"
+zlog::benchmark_end    "$timer"
+zlog::benchmark_block  "label"  <<'END'
   # code block
 END
 ```
@@ -997,35 +997,35 @@ END
 ### Configuration
 
 ```zsh
-z::log::setup              "/path/to/app.log"  [level]  [format]
-z::log::set_level          error|warn|info|debug|0-3
-z::log::set_file_level     error|warn|info|debug|0-3|-1|console
-z::log::set_file           "/path/to/app.log"
-z::log::set_format         text|json
-z::log::set_rotation       0|1  [max_size]  [keep_count]
-z::log::enable_buffering   [buffer_size]
-z::log::disable_buffering
-z::log::set_buffer_size    N
-z::log::set_timestamp_format  "%Y-%m-%d %H:%M:%S"
-z::log::show_config
-z::log::show_stats
-z::log::reset
-z::log::flush
+zlog::setup              "/path/to/app.log"  [level]  [format]
+zlog::set_level          error|warn|info|debug|0-3
+zlog::set_file_level     error|warn|info|debug|0-3|-1|console
+zlog::set_file           "/path/to/app.log"
+zlog::set_format         text|json
+zlog::set_rotation       0|1  [max_size]  [keep_count]
+zlog::enable_buffering   [buffer_size]
+zlog::disable_buffering
+zlog::set_buffer_size    N
+zlog::set_timestamp_format  "%Y-%m-%d %H:%M:%S"
+zlog::show_config
+zlog::show_stats
+zlog::reset
+zlog::flush
 ```
 
 ### Async
 
 ```zsh
-z::log::enable_async
-z::log::disable_async
-z::log::is_async            # returns 0 if active
+zlog::enable_async
+zlog::disable_async
+zlog::is_async            # returns 0 if active
 ```
 
 ### Performance
 
 ```zsh
-z::log::enable_performance_mode
-z::log::disable_performance_mode
+zlog::enable_performance_mode
+zlog::disable_performance_mode
 ```
 
 ---
@@ -1034,7 +1034,7 @@ z::log::disable_performance_mode
 
 ```mermaid
 flowchart TD
-    Call["z::log::info 'User logged in'\n'user' 'alice' 'ip' '1.2.3.4'"]
+    Call["zlog::info 'User logged in'\n'user' 'alice' 'ip' '1.2.3.4'"]
 
     FastFlag{"any_logging_enabled?"}
     Drop1["return 0 (no-op)"]
@@ -1089,8 +1089,8 @@ flowchart TD
 
 | Pattern | Meaning | Example |
 |---|---|---|
-| `z::log::<verb>` | Public API | `z::log::info` |
-| `__z::log::<verb>` | Private internal | `__z::log::engine` |
+| `zlog::<verb>` | Public API | `zlog::info` |
+| `__zlog::<verb>` | Private internal | `__zlog::engine` |
 | `__z::json::<verb>` | JSON utilities | `__z::json::escape` |
 | `_zlog_<name>` | Global state variable | `_zlog_config` |
 | `_ZLOG_<NAME>` | Readonly constant | `_ZLOG_LEVEL_INFO` |

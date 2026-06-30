@@ -163,9 +163,9 @@ bench_cleanup() {
   emulate -L zsh
   setopt localoptions
 
-  (( ${+functions[z::log::disable_performance_mode]} )) && z::log::disable_performance_mode >/dev/null 2>&1 || true
-  (( ${+functions[z::log::disable_async]} )) && z::log::disable_async >/dev/null 2>&1 || true
-  (( ${+functions[z::log::cleanup]} )) && z::log::cleanup >/dev/null 2>&1 || true
+  (( ${+functions[zlog::disable_performance_mode]} )) && zlog::disable_performance_mode >/dev/null 2>&1 || true
+  (( ${+functions[zlog::disable_async]} )) && zlog::disable_async >/dev/null 2>&1 || true
+  (( ${+functions[zlog::cleanup]} )) && zlog::cleanup >/dev/null 2>&1 || true
 
   if [[ -n "$BENCH_DIR" && -d "$BENCH_DIR" ]]; then
     rm -rf -- "$BENCH_DIR"
@@ -176,9 +176,9 @@ bench_setup() {
   emulate -L zsh
   setopt localoptions
 
-  z::log::reset >/dev/null 2>&1 || true
-  z::log::set_color_mode none >/dev/null 2>&1 || true
-  z::log::enable_timestamp_cache >/dev/null 2>&1 || true
+  zlog::reset >/dev/null 2>&1 || true
+  zlog::set_color_mode none >/dev/null 2>&1 || true
+  zlog::enable_timestamp_cache >/dev/null 2>&1 || true
 
   local -i i
   BENCH_LARGE_STRING=""
@@ -421,14 +421,14 @@ bench_noop() {
 }
 
 bench_context_create_remove() {
-  z::log::with_context request_id req-001 user alice >/dev/null 2>&1
+  zlog::with_context request_id req-001 user alice >/dev/null 2>&1
   local ctx="$REPLY"
-  [[ -n "$ctx" ]] && z::log::remove_context "$ctx" >/dev/null 2>&1
+  [[ -n "$ctx" ]] && zlog::remove_context "$ctx" >/dev/null 2>&1
 }
 
 bench_log_and_flush() {
-  z::log::info "Buffered flush message" key value >/dev/null 2>&1
-  z::log::flush >/dev/null 2>&1
+  zlog::info "Buffered flush message" key value >/dev/null 2>&1
+  zlog::flush >/dev/null 2>&1
 }
 
 ###############################################################################
@@ -465,105 +465,105 @@ bench_json() {
 bench_levels() {
   bench_section "Level Helpers"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::set_level info >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::set_level info >/dev/null 2>&1
 
-  bench_case "level" "level_name 2" 100000 __z::log::level_name 2
-  bench_case "level" "level_number info" 100000 __z::log::level_number info
-  bench_case "level" "is_level_active active" 100000 __z::log::is_level_active 2
-  bench_case "level" "is_level_active inactive" 100000 __z::log::is_level_active 3
-  bench_case "level" "if_info true" 100000 z::log::if_info
-  bench_case "level" "if_debug false" 100000 z::log::if_debug
+  bench_case "level" "level_name 2" 100000 __zlog::level_name 2
+  bench_case "level" "level_number info" 100000 __zlog::level_number info
+  bench_case "level" "is_level_active active" 100000 __zlog::is_level_active 2
+  bench_case "level" "is_level_active inactive" 100000 __zlog::is_level_active 3
+  bench_case "level" "if_info true" 100000 zlog::if_info
+  bench_case "level" "if_debug false" 100000 zlog::if_debug
 }
 
 bench_timestamps() {
   bench_section "Timestamps"
 
-  z::log::enable_timestamp_cache >/dev/null 2>&1
-  bench_case "timestamp" "get_timestamp human cached" 50000 z::log::get_timestamp human
-  bench_case "timestamp" "get_timestamp iso cached" 50000 z::log::get_timestamp iso
-  bench_case "timestamp" "get_timestamp ms cached" 50000 z::log::get_timestamp ms
-  bench_case "timestamp" "benchmark_now" 100000 z::log::benchmark_now
+  zlog::enable_timestamp_cache >/dev/null 2>&1
+  bench_case "timestamp" "get_timestamp human cached" 50000 zlog::get_timestamp human
+  bench_case "timestamp" "get_timestamp iso cached" 50000 zlog::get_timestamp iso
+  bench_case "timestamp" "get_timestamp ms cached" 50000 zlog::get_timestamp ms
+  bench_case "timestamp" "benchmark_now" 100000 zlog::benchmark_now
 
-  z::log::disable_timestamp_cache >/dev/null 2>&1
-  bench_case "timestamp" "get_timestamp human uncached" 5000 z::log::get_timestamp human
+  zlog::disable_timestamp_cache >/dev/null 2>&1
+  bench_case "timestamp" "get_timestamp human uncached" 5000 zlog::get_timestamp human
 
-  z::log::enable_timestamp_cache >/dev/null 2>&1
+  zlog::enable_timestamp_cache >/dev/null 2>&1
 }
 
 bench_formatters() {
   bench_section "Formatters"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::set_format text >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::set_format text >/dev/null 2>&1
 
   bench_case "format" "format_text no fields" 10000 \
-    __z::log::format_text 2 "Simple log message"
+    __zlog::format_text 2 "Simple log message"
 
   bench_case "format" "format_text 2 fields" 10000 \
-    __z::log::format_text 2 "Log message" key1 val1 key2 val2
+    __zlog::format_text 2 "Log message" key1 val1 key2 val2
 
   bench_case "format" "format_text 4 fields" 8000 \
-    __z::log::format_text 2 "Log message" k1 v1 k2 v2 k3 v3 k4 v4
+    __zlog::format_text 2 "Log message" k1 v1 k2 v2 k3 v3 k4 v4
 
   bench_case "format" "format_simple text" 20000 \
-    __z::log::format_simple 2 "Simple log message"
+    __zlog::format_simple 2 "Simple log message"
 
-  z::log::set_format json >/dev/null 2>&1
+  zlog::set_format json >/dev/null 2>&1
 
   bench_case "format" "format_json no fields" 10000 \
-    __z::log::format_json 2 "Simple log message"
+    __zlog::format_json 2 "Simple log message"
 
   bench_case "format" "format_json 2 fields" 10000 \
-    __z::log::format_json 2 "Log message" key1 val1 key2 val2
+    __zlog::format_json 2 "Log message" key1 val1 key2 val2
 
   bench_case "format" "format_simple json" 20000 \
-    __z::log::format_simple 2 "Simple log message"
+    __zlog::format_simple 2 "Simple log message"
 }
 
 bench_logging() {
   bench_section "Public Logging"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::setup "-" error text >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::setup "-" error text >/dev/null 2>&1
   bench_case "logging" "debug filtered console-only" 100000 \
-    z::log::debug "Filtered debug"
+    zlog::debug "Filtered debug"
 
-  z::log::setup "-" debug text >/dev/null 2>&1
+  zlog::setup "-" debug text >/dev/null 2>&1
   bench_case "logging" "info console text no fields" 5000 \
-    z::log::info "Console message"
+    zlog::info "Console message"
 
   bench_case "logging" "info console text 2 fields" 5000 \
-    z::log::info "Console message" key value
+    zlog::info "Console message" key value
 
   local log_text="$BENCH_DIR/log-text.log"
   : > "$log_text"
-  z::log::setup "$log_text" debug text >/dev/null 2>&1
+  zlog::setup "$log_text" debug text >/dev/null 2>&1
   _zlog_config[rotate]=0
   bench_case "logging" "info file text unbuffered" 3000 \
-    z::log::info "File message" key value
+    zlog::info "File message" key value
 
   local log_json="$BENCH_DIR/log-json.log"
   : > "$log_json"
-  z::log::setup "$log_json" debug json >/dev/null 2>&1
+  zlog::setup "$log_json" debug json >/dev/null 2>&1
   _zlog_config[rotate]=0
   bench_case "logging" "info file json unbuffered" 3000 \
-    z::log::info "JSON file message" key value
+    zlog::info "JSON file message" key value
 
   local log_buf="$BENCH_DIR/log-buffered.log"
   : > "$log_buf"
-  z::log::setup "$log_buf" debug text >/dev/null 2>&1
+  zlog::setup "$log_buf" debug text >/dev/null 2>&1
   _zlog_config[rotate]=0
-  z::log::enable_buffering 1000 >/dev/null 2>&1
+  zlog::enable_buffering 1000 >/dev/null 2>&1
   bench_case "logging" "info file text buffered" 10000 \
-    z::log::info "Buffered message" key value
-  z::log::flush >/dev/null 2>&1
+    zlog::info "Buffered message" key value
+  zlog::flush >/dev/null 2>&1
   bench_case "logging" "info buffered plus flush each op" 1000 \
     bench_log_and_flush
-  z::log::disable_buffering >/dev/null 2>&1
+  zlog::disable_buffering >/dev/null 2>&1
 }
 
 bench_contexts() {
@@ -571,15 +571,15 @@ bench_contexts() {
 
   local log="$BENCH_DIR/context.log"
   : > "$log"
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::setup "$log" debug text >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::setup "$log" debug text >/dev/null 2>&1
   _zlog_config[rotate]=0
 
   bench_case "context" "with_context create+remove" 2000 \
     bench_context_create_remove
 
-  z::log::with_context request_id req-bench user_id bench >/dev/null 2>&1
+  zlog::with_context request_id req-bench user_id bench >/dev/null 2>&1
   BENCH_CTX="$REPLY"
   if [[ -z "$BENCH_CTX" ]]; then
     print -r -u2 -- "benchmark-zlog: failed to create benchmark context; skipping context-call cases"
@@ -587,7 +587,7 @@ bench_contexts() {
   fi
   BENCH_CTX_INFO="${BENCH_CTX}::info"
   bench_case "context" "direct info same fields" 3000 \
-  z::log::info "Context log message" request_id req-bench user_id bench
+  zlog::info "Context log message" request_id req-bench user_id bench
 
   bench_case "context" "ctx info inherited fields" 3000 \
     "$BENCH_CTX_INFO" "Context log message"
@@ -595,7 +595,7 @@ bench_contexts() {
   bench_case "context" "ctx info inherited+extra fields" 3000 \
     "$BENCH_CTX_INFO" "Context log message" extra_key extra_val
 
-  z::log::remove_context "$BENCH_CTX" >/dev/null 2>&1
+  zlog::remove_context "$BENCH_CTX" >/dev/null 2>&1
   BENCH_CTX=""
   BENCH_CTX_INFO=""
 }
@@ -606,17 +606,17 @@ bench_rotation() {
   local log="$BENCH_DIR/rotate.log"
   print -r -- "abcdef" > "$log"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_file "$log" >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_file "$log" >/dev/null 2>&1
   _zlog_config[rotate]=1
   _zlog_config[rotate_size]=1048576
   _zlog_config[rotate_keep]=2
 
   bench_case "rotation" "get_file_size" 10000 \
-    __z::log::get_file_size "$log"
+    __zlog::get_file_size "$log"
 
   bench_case "rotation" "rotate_if_needed no-op" 3000 \
-    __z::log::rotate_if_needed
+    __zlog::rotate_if_needed
 }
 
 bench_performance_mode() {
@@ -625,26 +625,26 @@ bench_performance_mode() {
   local log="$BENCH_DIR/performance.log"
   : > "$log"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::setup "$log" debug text >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::setup "$log" debug text >/dev/null 2>&1
   _zlog_config[rotate]=0
 
-  z::log::disable_performance_mode >/dev/null 2>&1 || true
+  zlog::disable_performance_mode >/dev/null 2>&1 || true
   bench_case "perf" "normal info file no fields" 5000 \
-    z::log::info "Normal mode message"
+    zlog::info "Normal mode message"
 
   bench_case "perf" "normal info file 2 fields" 5000 \
-    z::log::info "Normal mode message" key value
+    zlog::info "Normal mode message" key value
 
-  z::log::enable_performance_mode >/dev/null 2>&1
+  zlog::enable_performance_mode >/dev/null 2>&1
   bench_case "perf" "fast info file no fields" 5000 \
-    z::log::info "Performance mode message"
+    zlog::info "Performance mode message"
 
   bench_case "perf" "fast info file 2 fields" 5000 \
-    z::log::info "Performance mode message" key value
+    zlog::info "Performance mode message" key value
 
-  z::log::disable_performance_mode >/dev/null 2>&1
+  zlog::disable_performance_mode >/dev/null 2>&1
 }
 
 bench_async() {
@@ -655,20 +655,20 @@ bench_async() {
   local log="$BENCH_DIR/async.log"
   : > "$log"
 
-  z::log::reset >/dev/null 2>&1
-  z::log::set_color_mode none >/dev/null 2>&1
-  z::log::setup "$log" debug text >/dev/null 2>&1
+  zlog::reset >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
+  zlog::setup "$log" debug text >/dev/null 2>&1
   _zlog_config[rotate]=0
 
-  if ! z::log::enable_async >/dev/null 2>&1; then
+  if ! zlog::enable_async >/dev/null 2>&1; then
     print -r -- "  async           skipped: enable_async failed"
     return 0
   fi
 
   bench_case "async" "info file async" 5000 \
-    z::log::info "Async message" key value
+    zlog::info "Async message" key value
 
-  z::log::disable_async >/dev/null 2>&1 || true
+  zlog::disable_async >/dev/null 2>&1 || true
 }
 
 ###############################################################################

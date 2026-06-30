@@ -95,41 +95,41 @@ trap cleanup_log EXIT INT TERM
 test_setup_and_config() {
   section "setup & Configuration API"
 
-  z::log::reset
+  zlog::reset
 
   # setup with file
-  z::log::setup "$TLOG" debug text
+  zlog::setup "$TLOG" debug text
   assert_eq "$TLOG"  "${_zlog_config[file]}"   "setup: file set"
   assert_eq "3"      "${_zlog_config[level]}"  "setup: level=debug (3)"
   assert_eq "text"   "${_zlog_config[format]}" "setup: format=text"
 
   # setup console-only
-  z::log::setup "-" info json
+  zlog::setup "-" info json
   assert_eq ""       "${_zlog_config[file]}"   "setup '-': file is empty"
   assert_eq "2"      "${_zlog_config[level]}"  "setup: level=info (2)"
   assert_eq "json"   "${_zlog_config[format]}" "setup: format=json"
 
   # set_level / get_level
-  z::log::set_level warn
-  local lvl; lvl=$(z::log::get_level)
+  zlog::set_level warn
+  local lvl; lvl=$(zlog::get_level)
   assert_eq "WARN" "$lvl" "get_level returns WARN after set_level warn"
 
   # set_format / get_format
-  z::log::set_format text
-  local fmt; fmt=$(z::log::get_format)
+  zlog::set_format text
+  local fmt; fmt=$(zlog::get_format)
   assert_eq "text" "$fmt" "get_format returns text"
 
   # set_file / get_file
-  z::log::set_file "$TLOG"
-  local f; f=$(z::log::get_file)
+  zlog::set_file "$TLOG"
+  local f; f=$(zlog::get_file)
   assert_eq "$TLOG" "$f" "get_file returns set path"
 
   # show_config runs without error
-  local out; out=$(z::log::show_config 2>&1)
+  local out; out=$(zlog::show_config 2>&1)
   assert_rc 0 $? "show_config exits 0"
   assert_contains "$out" "WARN" "show_config output contains current level"
 
-  z::log::reset
+  zlog::reset
   cleanup_log
 }
 
@@ -140,14 +140,14 @@ test_setup_and_config() {
 test_core_logging_text() {
   section "Core Logging — Text Format"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::error "Error occurred" host db.internal code 500
-  z::log::warn  "High memory"   used_mb 1800
-  z::log::info  "Server ready"  port 8080
-  z::log::debug "Cache miss"    key session_42
-  z::log::info  "-n"            opt -u2 path 'C:\tmp\value'
+  zlog::error "Error occurred" host db.internal code 500
+  zlog::warn  "High memory"   used_mb 1800
+  zlog::info  "Server ready"  port 8080
+  zlog::debug "Cache miss"    key session_42
+  zlog::info  "-n"            opt -u2 path 'C:\tmp\value'
 
   local content; content=$(cat "$TLOG")
 
@@ -165,7 +165,7 @@ test_core_logging_text() {
   assert_contains "$content" "opt=-u2"       "Option-like text context emitted literally"
   assert_contains "$content" 'path=C:\tmp\value' "Text context backslashes emitted literally"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -175,11 +175,11 @@ test_core_logging_text() {
 test_core_logging_json() {
   section "Core Logging — JSON Format"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug json
+  zlog::reset
+  zlog::setup "$TLOG" debug json
 
-  z::log::info "User login" actor alice ip 10.0.0.1
-  z::log::info "--" path 'C:\tmp\value' opt -n
+  zlog::info "User login" actor alice ip 10.0.0.1
+  zlog::info "--" path 'C:\tmp\value' opt -n
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" '"level"'    "JSON has level field"
@@ -194,7 +194,7 @@ test_core_logging_json() {
   assert_contains "$content" '"opt":"\u002dn"'           "Option-like JSON context emitted as data"
   assert_contains "$content" '"path":"C:\\tmp\\value"' "JSON context backslashes escaped"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -204,13 +204,13 @@ test_core_logging_json() {
 test_printf_logging() {
   section "Printf-Style Logging"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::infof  "Processed %d items in %.2fs" 42 1.5
-  z::log::warnf  "Memory at %d%%" 85
-  z::log::errorf "Failed after %d retries" 3
-  z::log::debugf "Cache hit rate: %.1f%%" 97.3
+  zlog::infof  "Processed %d items in %.2fs" 42 1.5
+  zlog::warnf  "Memory at %d%%" 85
+  zlog::errorf "Failed after %d retries" 3
+  zlog::debugf "Cache hit rate: %.1f%%" 97.3
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "Processed 42 items in 1.50s" "infof formats correctly"
@@ -218,7 +218,7 @@ test_printf_logging() {
   assert_contains "$content" "Failed after 3 retries"      "errorf formats correctly"
   assert_contains "$content" "Cache hit rate: 97.3%"       "debugf formats correctly"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -228,13 +228,13 @@ test_printf_logging() {
 test_level_filtering() {
   section "Level Filtering"
 
-  z::log::reset
-  z::log::setup "$TLOG" warn text
+  zlog::reset
+  zlog::setup "$TLOG" warn text
 
-  z::log::error "error-msg"
-  z::log::warn  "warn-msg"
-  z::log::info  "info-msg"
-  z::log::debug "debug-msg"
+  zlog::error "error-msg"
+  zlog::warn  "warn-msg"
+  zlog::info  "info-msg"
+  zlog::debug "debug-msg"
 
   local content; content=$(cat "$TLOG")
   assert_contains     "$content" "error-msg" "ERROR passes warn filter"
@@ -242,22 +242,22 @@ test_level_filtering() {
   assert_not_contains "$content" "info-msg"  "INFO blocked by warn filter"
   assert_not_contains "$content" "debug-msg" "DEBUG blocked by warn filter"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
-# 6. Generic z::log::log
+# 6. Generic zlog::log
 ###############################################################################
 
 test_generic_log() {
-  section "Generic z::log::log"
+  section "Generic zlog::log"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::log "info"  "via-name"
-  z::log::log 2       "via-number"
-  z::log::log "debug" "with-kv" key val
+  zlog::log "info"  "via-name"
+  zlog::log 2       "via-number"
+  zlog::log "debug" "with-kv" key val
 
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "via-name"   "log with level name works"
@@ -265,7 +265,7 @@ test_generic_log() {
   assert_contains "$content" "with-kv"    "log with KV works"
   assert_contains "$content" "key=val"    "log KV pair present"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -275,31 +275,31 @@ test_generic_log() {
 test_control_flow() {
   section "Control-Flow Helpers"
 
-  z::log::reset
-  z::log::setup "$TLOG" info text
+  zlog::reset
+  zlog::setup "$TLOG" info text
 
   # with_level — temporarily raises level
-  z::log::with_level debug z::log::debug "debug-via-with_level"
+  zlog::with_level debug zlog::debug "debug-via-with_level"
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "debug-via-with_level" "with_level raises level temporarily"
 
   # after with_level, level is restored
-  z::log::debug "should-not-appear"
+  zlog::debug "should-not-appear"
   content=$(cat "$TLOG")
   assert_not_contains "$content" "should-not-appear" "level restored after with_level"
 
   # silent — suppresses all output
-  z::log::silent z::log::error "silenced-error"
+  zlog::silent zlog::error "silenced-error"
   content=$(cat "$TLOG")
   assert_not_contains "$content" "silenced-error" "silent suppresses logging"
 
   # always — bypasses level filter
-  z::log::set_level error
-  z::log::always "always-msg" key val
+  zlog::set_level error
+  zlog::always "always-msg" key val
   content=$(cat "$TLOG")
   assert_contains "$content" "always-msg" "always bypasses level filter"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -309,27 +309,27 @@ test_control_flow() {
 test_once_and_rate_limit() {
   section "Once & Rate Limiting"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
   # once — logs only on first call per key
   local i
   for i in {1..5}; do
-    z::log::once "startup-key" info "startup-msg" iter $i
+    zlog::once "startup-key" info "startup-msg" iter $i
   done
   local count; count=$(grep -c "startup-msg" "$TLOG" 2>/dev/null || print 0)
   assert_eq "1" "$count" "once logs exactly once per key"
 
   # clear_once — allows re-logging
-  z::log::clear_once "startup-key"
-  z::log::once "startup-key" info "startup-msg-2"
+  zlog::clear_once "startup-key"
+  zlog::once "startup-key" info "startup-msg-2"
   count=$(grep -c "startup-msg-2" "$TLOG" 2>/dev/null || print 0)
   assert_eq "1" "$count" "once logs again after clear_once"
 
   # rate_limit — caps messages per window
   local logged=0 limited=0
   for i in {1..10}; do
-    if z::log::rate_limit "rl-key" 3 60 info "rate-limited-msg"; then
+    if zlog::rate_limit "rl-key" 3 60 info "rate-limited-msg"; then
       (( logged++ ))
     else
       (( limited++ ))
@@ -338,8 +338,8 @@ test_once_and_rate_limit() {
   assert_eq "3" "$logged"  "rate_limit allows exactly 3 messages"
   assert_eq "7" "$limited" "rate_limit blocks remaining 7"
 
-  z::log::clear_rate_limits
-  z::log::reset; cleanup_log
+  zlog::clear_rate_limits
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -349,10 +349,10 @@ test_once_and_rate_limit() {
 test_context_loggers() {
   section "Context Loggers"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::with_context "request_id" "abc-123" "actor" "alice"
+  zlog::with_context "request_id" "abc-123" "actor" "alice"
   local ctx="$REPLY"
 
   ${ctx}::info   "Request received"
@@ -373,18 +373,18 @@ test_context_loggers() {
   # thin trampoline forwarding to the single shared dispatcher, not a body of
   # generated logic. Assert the body is exactly the dispatcher call.
   local info_body; info_body=$(functions "${ctx}::info")
-  assert_contains "$info_body" "__z::log::ctx_dispatch" "Context fn forwards to shared dispatcher"
+  assert_contains "$info_body" "__zlog::ctx_dispatch" "Context fn forwards to shared dispatcher"
   local has_zlog_logic=0
   [[ "$info_body" == *"_zlog_contexts"* ]] && has_zlog_logic=1
   assert_eq "0" "$has_zlog_logic" "Context fn carries no inlined logic (single source of truth)"
 
-  z::log::remove_context "$ctx"
+  zlog::remove_context "$ctx"
 
   # After removal, context functions should be gone
   typeset -f "${ctx}::info" &>/dev/null
   assert_rc 1 $? "Context functions removed after remove_context"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -394,25 +394,25 @@ test_context_loggers() {
 test_benchmarking() {
   section "Benchmarking"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
   # benchmark wraps a command and logs duration
-  z::log::benchmark "import" sleep 0
+  zlog::benchmark "import" sleep 0
   local content; content=$(cat "$TLOG")
   assert_contains "$content" "import"    "benchmark logs label"
   assert_contains "$content" "duration"  "benchmark logs duration field"
 
   # benchmark_start / benchmark_end
-  z::log::benchmark_start "myop"
+  zlog::benchmark_start "myop"
   local timer_id="$REPLY"
   sleep 0
-  z::log::benchmark_end "$timer_id"
+  zlog::benchmark_end "$timer_id"
   content=$(cat "$TLOG")
   assert_contains "$content" "Benchmark completed: myop" "benchmark_end logs operation name"
   assert_contains "$content" "duration"                  "benchmark_end logs duration"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -422,28 +422,28 @@ test_benchmarking() {
 test_buffering() {
   section "Buffering"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::enable_buffering 10
+  zlog::enable_buffering 10
   assert_eq "1" "${_zlog_config[buffered]}" "Buffering enabled"
 
   local i
   for i in {1..5}; do
-    z::log::info "buffered-msg-$i"
+    zlog::info "buffered-msg-$i"
   done
 
   # Before flush, messages may not be in file yet
   local count_before; count_before=$(grep -c "buffered-msg" "$TLOG" 2>/dev/null || print 0)
 
-  z::log::flush
+  zlog::flush
   local count_after; count_after=$(grep -c "buffered-msg" "$TLOG" 2>/dev/null || print 0)
   assert_eq "5" "$count_after" "All buffered messages flushed to file"
 
-  z::log::disable_buffering
+  zlog::disable_buffering
   assert_eq "0" "${_zlog_config[buffered]}" "Buffering disabled"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -453,18 +453,18 @@ test_buffering() {
 test_statistics() {
   section "Statistics"
 
-  z::log::reset
-  z::log::reset_stats
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::reset_stats
+  zlog::setup "$TLOG" debug text
 
-  z::log::info  "msg1"
-  z::log::warn  "msg2"
-  z::log::error "msg3"
+  zlog::info  "msg1"
+  zlog::warn  "msg2"
+  zlog::error "msg3"
 
-  local stats; stats=$(z::log::get_stats)
+  local stats; stats=$(zlog::get_stats)
   assert_contains "$stats" "Messages logged" "get_stats output has messages_logged"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -475,22 +475,22 @@ test_timestamps() {
   section "Timestamp Utilities"
 
   local ts
-  z::log::get_timestamp human; ts="$REPLY"
+  zlog::get_timestamp human; ts="$REPLY"
   assert_contains "$ts" "-" "human timestamp contains date separator"
 
-  z::log::get_timestamp iso; ts="$REPLY"
+  zlog::get_timestamp iso; ts="$REPLY"
   assert_contains "$ts" "T" "ISO timestamp contains T separator"
 
-  z::log::get_timestamp epoch; ts="$REPLY"
+  zlog::get_timestamp epoch; ts="$REPLY"
   assert_ne "" "$ts" "epoch timestamp is non-empty"
 
-  z::log::enable_timestamp_cache
+  zlog::enable_timestamp_cache
   assert_eq "1" "${_zlog_config[timestamp_cache_enabled]}" "Timestamp cache enabled"
 
-  z::log::disable_timestamp_cache
+  zlog::disable_timestamp_cache
   assert_eq "0" "${_zlog_config[timestamp_cache_enabled]}" "Timestamp cache disabled"
 
-  z::log::enable_timestamp_cache
+  zlog::enable_timestamp_cache
 }
 
 ###############################################################################
@@ -500,9 +500,9 @@ test_timestamps() {
 test_file_rotation() {
   section "File Rotation"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
-  z::log::set_rotation 1 "2KB" 3
+  zlog::reset
+  zlog::setup "$TLOG" debug text
+  zlog::set_rotation 1 "2KB" 3
 
   assert_eq "1"    "${_zlog_config[rotate]}"      "Rotation enabled"
   assert_eq "2048" "${_zlog_config[rotate_size]}" "Rotation size = 2KB"
@@ -511,7 +511,7 @@ test_file_rotation() {
   # Write enough to trigger rotation
   local i
   for i in {1..100}; do
-    z::log::info "Rotation test message $i — padding to fill the file quickly"
+    zlog::info "Rotation test message $i — padding to fill the file quickly"
   done
 
   # At least the main log file should exist
@@ -520,16 +520,16 @@ test_file_rotation() {
 
   local size_probe="${TLOG}.size_probe"
   print -n "0123456789" > "$size_probe"   # exactly 10 bytes
-  __z::log::get_file_size "$size_probe"
+  __zlog::get_file_size "$size_probe"
   assert_eq "10" "$REPLY" "get_file_size returns exact byte count"
   if zmodload -e zsh/stat 2>/dev/null || zmodload zsh/stat 2>/dev/null; then
     assert_eq "zstat" "${_zlog_state[stat_cmd]}" "get_file_size uses fork-free zstat builtin"
   fi
-  __z::log::get_file_size "${TLOG}.does_not_exist"
+  __zlog::get_file_size "${TLOG}.does_not_exist"
   assert_rc 1 $? "get_file_size returns 1 for missing file"
   rm -f "$size_probe"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -539,10 +539,10 @@ test_file_rotation() {
 test_benchmark_block() {
   section "Benchmark Block"
 
-  z::log::reset
-  z::log::setup "$TLOG" debug text
+  zlog::reset
+  zlog::setup "$TLOG" debug text
 
-  z::log::benchmark_block "block-op" <<'END'
+  zlog::benchmark_block "block-op" <<'END'
     local x=0
     for i in {1..10}; do (( x += i )); done
 END
@@ -551,7 +551,7 @@ END
   assert_contains "$content" "block-op"  "benchmark_block logs label"
   assert_contains "$content" "duration"  "benchmark_block logs duration field"
 
-  z::log::reset; cleanup_log
+  zlog::reset; cleanup_log
 }
 
 ###############################################################################
@@ -561,17 +561,17 @@ END
 test_performance_mode() {
   section "Performance Mode"
 
-  z::log::reset
+  zlog::reset
   local perf_log="/tmp/zlog_test_perf_$$.log"
-  z::log::setup "$perf_log" info text
+  zlog::setup "$perf_log" info text
 
-  z::log::enable_performance_mode
+  zlog::enable_performance_mode
 
   # Capture console output (fast engine writes to stderr)
   local console_out
-  console_out=$(z::log::info "-n" path 'C:\tmp\perf' 2>&1)
+  console_out=$(zlog::info "-n" path 'C:\tmp\perf' 2>&1)
 
-  z::log::disable_performance_mode
+  zlog::disable_performance_mode
 
   local perf_content; perf_content=$(cat "$perf_log")
 
@@ -581,7 +581,7 @@ test_performance_mode() {
   assert_contains "$perf_content" 'path=C:\tmp\perf' "Backslashes preserved in performance mode file output"
   assert_eq "0" "${_zlog_config[debug_mode]}" "debug_mode disabled in performance mode aftermath"
 
-  z::log::reset
+  zlog::reset
   rm -f "$perf_log"
 }
 
@@ -592,30 +592,30 @@ test_performance_mode() {
 test_async_logging() {
   section "Async Logging"
 
-  z::log::reset
+  zlog::reset
   # Pre-initialize async config keys to avoid no_unset errors
   _zlog_config[async_pid]=""
   _zlog_config[async_fd]=""
   _zlog_config[async_fifo]=""
   local async_log="/tmp/zlog_test_async_$$.log"
-  z::log::setup "$async_log" debug text
+  zlog::setup "$async_log" debug text
 
-  z::log::enable_async
+  zlog::enable_async
   local rc=$?
   assert_rc 0 $rc "enable_async returns 0 with file configured"
 
-  z::log::is_async
+  zlog::is_async
   assert_rc 0 $? "is_async returns 0 after enable_async"
 
   local i
   for i in {1..5}; do
-    z::log::info "async-msg-$i"
+    zlog::info "async-msg-$i"
   done
-  z::log::info "--" path 'C:\tmp\async' opt -n
+  zlog::info "--" path 'C:\tmp\async' opt -n
 
-  z::log::disable_async
+  zlog::disable_async
 
-  z::log::is_async
+  zlog::is_async
   assert_rc 1 $? "is_async returns 1 after disable_async"
 
   # Give async worker a moment to flush
@@ -626,7 +626,7 @@ test_async_logging() {
   assert_contains "$content" 'path=C:\tmp\async' "Async context backslashes written literally"
   assert_contains "$content" "opt=-n" "Option-like async context written literally"
 
-  z::log::reset
+  zlog::reset
   rm -f "$async_log"
 }
 
@@ -637,11 +637,11 @@ test_async_logging() {
 test_reset() {
   section "reset"
 
-  z::log::setup "$TLOG" debug json
-  z::log::set_level error
-  z::log::enable_buffering 100
+  zlog::setup "$TLOG" debug json
+  zlog::set_level error
+  zlog::enable_buffering 100
 
-  z::log::reset
+  zlog::reset
 
   assert_eq "text" "${_zlog_config[format]}" "reset restores format to text"
   assert_eq ""     "${_zlog_config[file]}"   "reset clears file"

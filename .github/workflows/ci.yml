@@ -34,7 +34,7 @@ jobs:
         run: zsh --version
 
       - name: Verify library sources cleanly
-        run: zsh -c 'source ./zlog && z::log::info "source ok"'
+        run: zsh -c 'source ./zlog && zlog::info "source ok"'
 
       - name: Run Unit tests
         run: zsh tests/test-zlog-unit.zsh

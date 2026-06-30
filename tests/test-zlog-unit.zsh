@@ -134,66 +134,66 @@ test_validation() {
   local orig_level="${_zlog_config[level]}"
 
   _zlog_config[rotate_size]=100
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "$_ZLOG_MIN_ROTATE_SIZE" "${_zlog_config[rotate_size]}" \
     "rotate_size < min clamped to min"
 
   _zlog_config[rotate_size]=2000000000
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "$_ZLOG_MAX_ROTATE_SIZE" "${_zlog_config[rotate_size]}" \
     "rotate_size > max clamped to max"
 
   _zlog_config[buffer_max]=0
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "$_ZLOG_MIN_BUFFER_SIZE" "${_zlog_config[buffer_max]}" \
     "buffer_max < min clamped to min"
 
   _zlog_config[buffer_max]=20000
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "$_ZLOG_MAX_BUFFER_SIZE" "${_zlog_config[buffer_max]}" \
     "buffer_max > max clamped to max"
 
   _zlog_config[level]=-1
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "2" "${_zlog_config[level]}" "Invalid level -1 reset to INFO (2)"
 
   _zlog_config[level]=10
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "2" "${_zlog_config[level]}" "Invalid level 10 reset to INFO (2)"
 
   _zlog_config[file_level]=10
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "-1" "${_zlog_config[file_level]}" "Invalid file_level reset to -1"
 
   _zlog_config[rotate_keep]=-5
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "0" "${_zlog_config[rotate_keep]}" "rotate_keep < 0 clamped to 0"
 
   _zlog_config[rotate_keep]=200
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "100" "${_zlog_config[rotate_keep]}" "rotate_keep > 100 clamped to 100"
 
   _zlog_config[rotation_lock_timeout]=0
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "1" "${_zlog_config[rotation_lock_timeout]}" "lock_timeout < 1 clamped to 1"
 
   _zlog_config[rotation_lock_timeout]=100
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "60" "${_zlog_config[rotation_lock_timeout]}" "lock_timeout > 60 clamped to 60"
 
   _zlog_config[max_depth]=0
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "1" "${_zlog_config[max_depth]}" "max_depth < 1 clamped to 1"
 
   _zlog_config[max_depth]=50
-  __z::log::validate_globals
+  __zlog::validate_globals
   assert_eq "20" "${_zlog_config[max_depth]}" "max_depth > 20 clamped to 20"
 
   # Restore
   _zlog_config[rotate_size]=$orig_rotate_size
   _zlog_config[buffer_max]=$orig_buffer_max
   _zlog_config[level]=$orig_level
-  __z::log::validate_globals
+  __zlog::validate_globals
 }
 
 ###############################################################################
@@ -210,18 +210,18 @@ test_color_detection() {
   local -x NO_COLOR TERM COLORTERM
 
   NO_COLOR=1
-  __z::log::detect_color_support
+  __zlog::detect_color_support
   assert_eq "none" "$REPLY" "NO_COLOR=1 → none"
   unset NO_COLOR
 
   TERM=dumb
-  __z::log::detect_color_support
+  __zlog::detect_color_support
   assert_eq "none" "$REPLY" "TERM=dumb → none"
 
   # When stderr is not a tty the function returns "none" for all other TERMs.
   # Verify the function always returns a known value (not empty).
   TERM=xterm-256color; unset COLORTERM
-  __z::log::detect_color_support
+  __zlog::detect_color_support
   assert_ne "" "$REPLY" "detect_color_support always returns a non-empty value"
 }
 
@@ -232,24 +232,24 @@ test_color_detection() {
 test_rgb_to_256() {
   section "RGB → 256 Color Conversion"
 
-  __z::log::rgb_to_256 0 0 0;       assert_eq "16"  "$REPLY" "Black (0,0,0) → 16"
-  __z::log::rgb_to_256 255 255 255; assert_eq "231" "$REPLY" "White (255,255,255) → 231"
-  __z::log::rgb_to_256 255 0 0;     assert_eq "196" "$REPLY" "Red (255,0,0) → 196"
-  __z::log::rgb_to_256 0 255 0;     assert_eq "46"  "$REPLY" "Green (0,255,0) → 46"
-  __z::log::rgb_to_256 0 0 255;     assert_eq "21"  "$REPLY" "Blue (0,0,255) → 21"
-  __z::log::rgb_to_256 128 128 128; assert_eq "244" "$REPLY" "Gray (128,128,128) → 244"
+  __zlog::rgb_to_256 0 0 0;       assert_eq "16"  "$REPLY" "Black (0,0,0) → 16"
+  __zlog::rgb_to_256 255 255 255; assert_eq "231" "$REPLY" "White (255,255,255) → 231"
+  __zlog::rgb_to_256 255 0 0;     assert_eq "196" "$REPLY" "Red (255,0,0) → 196"
+  __zlog::rgb_to_256 0 255 0;     assert_eq "46"  "$REPLY" "Green (0,255,0) → 46"
+  __zlog::rgb_to_256 0 0 255;     assert_eq "21"  "$REPLY" "Blue (0,0,255) → 21"
+  __zlog::rgb_to_256 128 128 128; assert_eq "244" "$REPLY" "Gray (128,128,128) → 244"
 
   local rc
-  __z::log::rgb_to_256 256 0 0 2>/dev/null; rc=$?
+  __zlog::rgb_to_256 256 0 0 2>/dev/null; rc=$?
   assert_rc 1 $rc "RGB > 255 fails"
 
-  __z::log::rgb_to_256 -1 0 0 2>/dev/null; rc=$?
+  __zlog::rgb_to_256 -1 0 0 2>/dev/null; rc=$?
   assert_rc 1 $rc "Negative RGB fails"
 
-  __z::log::rgb_to_256 abc 0 0 2>/dev/null; rc=$?
+  __zlog::rgb_to_256 abc 0 0 2>/dev/null; rc=$?
   assert_rc 1 $rc "Non-numeric RGB fails"
 
-  __z::log::rgb_to_256 100 200 2>/dev/null; rc=$?
+  __zlog::rgb_to_256 100 200 2>/dev/null; rc=$?
   assert_rc 1 $rc "Missing third arg fails"
 }
 
@@ -261,7 +261,7 @@ test_color_system() {
   section "Color System"
 
   # Trigger lazy initialization
-  z::log::get_color_mode &>/dev/null
+  zlog::get_color_mode &>/dev/null
 
   assert_eq "1"  "${_zlog_color_cache[initialized]}" "Colors initialized after first use"
   assert_ne ""   "${_zlog_color_cache[mode]}"        "Color mode is set"
@@ -269,19 +269,19 @@ test_color_system() {
 
   local orig_mode="${_zlog_color_cache[mode]}"
 
-  z::log::set_color_mode "none";      assert_eq "none"      "${_zlog_color_cache[mode]}" "set_color_mode none"
-  z::log::set_color_mode "basic";     assert_eq "basic"     "${_zlog_color_cache[mode]}" "set_color_mode basic"
-  z::log::set_color_mode "256";       assert_eq "256"       "${_zlog_color_cache[mode]}" "set_color_mode 256"
-  z::log::set_color_mode "truecolor"; assert_eq "truecolor" "${_zlog_color_cache[mode]}" "set_color_mode truecolor"
+  zlog::set_color_mode "none";      assert_eq "none"      "${_zlog_color_cache[mode]}" "set_color_mode none"
+  zlog::set_color_mode "basic";     assert_eq "basic"     "${_zlog_color_cache[mode]}" "set_color_mode basic"
+  zlog::set_color_mode "256";       assert_eq "256"       "${_zlog_color_cache[mode]}" "set_color_mode 256"
+  zlog::set_color_mode "truecolor"; assert_eq "truecolor" "${_zlog_color_cache[mode]}" "set_color_mode truecolor"
 
-  local mode; mode=$(z::log::get_color_mode)
+  local mode; mode=$(zlog::get_color_mode)
   assert_eq "truecolor" "$mode" "get_color_mode returns current mode"
 
   local rc
-  z::log::set_color_mode "invalid" 2>/dev/null; rc=$?
+  zlog::set_color_mode "invalid" 2>/dev/null; rc=$?
   assert_rc 1 $rc "Invalid color mode returns 1"
 
-  z::log::set_color_mode "$orig_mode"
+  zlog::set_color_mode "$orig_mode"
 }
 
 ###############################################################################
@@ -291,19 +291,19 @@ test_color_system() {
 test_colorize() {
   section "Colorize Function"
 
-  z::log::colorize "red" "Error text"
+  zlog::colorize "red" "Error text"
   assert_contains "$REPLY" "Error text" "Colorized text contains original"
 
-  z::log::colorize "error" "Error text"
+  zlog::colorize "error" "Error text"
   assert_contains "$REPLY" "Error text" "Semantic color 'error' works"
 
-  z::log::colorize "rgb(255, 0, 0)" "Red text"
+  zlog::colorize "rgb(255, 0, 0)" "Red text"
   assert_contains "$REPLY" "Red text" "RGB color works"
 
-  z::log::colorize "rgb(300,0,0)" "Invalid"
+  zlog::colorize "rgb(300,0,0)" "Invalid"
   assert_eq "Invalid" "$REPLY" "Invalid RGB returns plain text"
 
-  z::log::colorize "nonexistent_color" "Plain"
+  zlog::colorize "nonexistent_color" "Plain"
   assert_eq "Plain" "$REPLY" "Unknown color name returns plain text"
 }
 
@@ -316,24 +316,24 @@ test_debug_mode() {
 
   assert_eq "0" "${_zlog_config[debug_mode]}" "debug_mode off by default"
 
-  z::log::enable_debug_mode
+  zlog::enable_debug_mode
   assert_eq "1" "${_zlog_config[debug_mode]}" "enable_debug_mode sets flag"
 
-  z::log::is_debug_mode
+  zlog::is_debug_mode
   assert_rc 0 $? "is_debug_mode returns 0 when enabled"
 
   local out
-  out=$(__z::log::debug_internal "Test message" 2>&1)
+  out=$(__zlog::debug_internal "Test message" 2>&1)
   assert_contains "$out" "zlog[DEBUG]" "debug_internal output has prefix"
   assert_contains "$out" "Test message" "debug_internal output has message"
 
-  z::log::disable_debug_mode
+  zlog::disable_debug_mode
   assert_eq "0" "${_zlog_config[debug_mode]}" "disable_debug_mode clears flag"
 
-  z::log::is_debug_mode
+  zlog::is_debug_mode
   assert_rc 1 $? "is_debug_mode returns 1 when disabled"
 
-  out=$(__z::log::debug_internal "Should not appear" 2>&1)
+  out=$(__zlog::debug_internal "Should not appear" 2>&1)
   assert_eq "" "$out" "No debug output when disabled"
 }
 
@@ -386,28 +386,28 @@ test_level_helpers() {
   section "Level Helpers"
 
   local orig_level="${_zlog_config[level]}"
-  z::log::set_level info
+  zlog::set_level info
 
-  __z::log::level_name 0; assert_eq "ERROR" "$REPLY" "level_name 0 = ERROR"
-  __z::log::level_name 1; assert_eq "WARN"  "$REPLY" "level_name 1 = WARN"
-  __z::log::level_name 2; assert_eq "INFO"  "$REPLY" "level_name 2 = INFO"
-  __z::log::level_name 3; assert_eq "DEBUG" "$REPLY" "level_name 3 = DEBUG"
+  __zlog::level_name 0; assert_eq "ERROR" "$REPLY" "level_name 0 = ERROR"
+  __zlog::level_name 1; assert_eq "WARN"  "$REPLY" "level_name 1 = WARN"
+  __zlog::level_name 2; assert_eq "INFO"  "$REPLY" "level_name 2 = INFO"
+  __zlog::level_name 3; assert_eq "DEBUG" "$REPLY" "level_name 3 = DEBUG"
 
-  __z::log::level_number "error"; assert_eq "0" "$REPLY" "level_number error = 0"
-  __z::log::level_number "warn";  assert_eq "1" "$REPLY" "level_number warn = 1"
-  __z::log::level_number "info";  assert_eq "2" "$REPLY" "level_number info = 2"
-  __z::log::level_number "debug"; assert_eq "3" "$REPLY" "level_number debug = 3"
-  __z::log::level_number "INFO";  assert_eq "2" "$REPLY" "level_number INFO (uppercase) = 2"
+  __zlog::level_number "error"; assert_eq "0" "$REPLY" "level_number error = 0"
+  __zlog::level_number "warn";  assert_eq "1" "$REPLY" "level_number warn = 1"
+  __zlog::level_number "info";  assert_eq "2" "$REPLY" "level_number info = 2"
+  __zlog::level_number "debug"; assert_eq "3" "$REPLY" "level_number debug = 3"
+  __zlog::level_number "INFO";  assert_eq "2" "$REPLY" "level_number INFO (uppercase) = 2"
 
-  __z::log::is_level_active 0; assert_rc 0 $? "ERROR active at info level"
-  __z::log::is_level_active 1; assert_rc 0 $? "WARN active at info level"
-  __z::log::is_level_active 2; assert_rc 0 $? "INFO active at info level"
-  __z::log::is_level_active 3; assert_rc 1 $? "DEBUG inactive at info level"
+  __zlog::is_level_active 0; assert_rc 0 $? "ERROR active at info level"
+  __zlog::is_level_active 1; assert_rc 0 $? "WARN active at info level"
+  __zlog::is_level_active 2; assert_rc 0 $? "INFO active at info level"
+  __zlog::is_level_active 3; assert_rc 1 $? "DEBUG inactive at info level"
 
-  z::log::if_error; assert_rc 0 $? "if_error true at info level"
-  z::log::if_warn;  assert_rc 0 $? "if_warn true at info level"
-  z::log::if_info;  assert_rc 0 $? "if_info true at info level"
-  z::log::if_debug; assert_rc 1 $? "if_debug false at info level"
+  zlog::if_error; assert_rc 0 $? "if_error true at info level"
+  zlog::if_warn;  assert_rc 0 $? "if_warn true at info level"
+  zlog::if_info;  assert_rc 0 $? "if_info true at info level"
+  zlog::if_debug; assert_rc 1 $? "if_debug false at info level"
 
   _zlog_config[level]=$orig_level
 }
@@ -420,7 +420,7 @@ test_show_colors() {
   section "show_colors Output"
 
   local out
-  out=$(z::log::show_colors 2>&1)
+  out=$(zlog::show_colors 2>&1)
   local rc=$?
   assert_rc 0 $rc "show_colors exits 0"
   assert_contains "$out" "Color Mode:"       "Output has Color Mode section"
@@ -440,39 +440,39 @@ test_show_colors() {
 test_format_text() {
   section "format_text Output (default formatter)"
 
-  local saved_mode; saved_mode=$(z::log::get_color_mode)
+  local saved_mode; saved_mode=$(zlog::get_color_mode)
   local saved_format="${_zlog_config[format]}"
-  z::log::set_color_mode none >/dev/null 2>&1
+  zlog::set_color_mode none >/dev/null 2>&1
   _zlog_config[format]=text
 
-  __z::log::format_text 0 "boom"
+  __zlog::format_text 0 "boom"
   assert_contains "$REPLY" " [ERROR] " "ERROR level not padded (5 chars already)"
   assert_contains "$REPLY" " boom"     "ERROR message present"
 
-  __z::log::format_text 1 "careful"
+  __zlog::format_text 1 "careful"
   assert_contains "$REPLY" " [WARN ] " "WARN level padded to 5 chars"
 
-  __z::log::format_text 2 "hello"
+  __zlog::format_text 2 "hello"
   assert_contains "$REPLY" " [INFO ] " "INFO level padded to 5 chars"
 
-  __z::log::format_text 3 "trace"
+  __zlog::format_text 3 "trace"
   assert_contains "$REPLY" " [DEBUG] " "DEBUG level not padded (5 chars already)"
 
-  __z::log::format_text 7 "weird"
+  __zlog::format_text 7 "weird"
   assert_contains "$REPLY" " [UNKNOWN] " "Unknown level falls back to UNKNOWN"
 
-  __z::log::format_text 2 "with fields" request_id abc duration_ms 1500
+  __zlog::format_text 2 "with fields" request_id abc duration_ms 1500
   assert_contains "$REPLY" "request_id=abc"  "Context key=value rendered"
   assert_contains "$REPLY" "duration_ms=1500" "Second context key=value rendered"
   assert_contains "$REPLY" "| request_id"     "Context fields separated by pipe"
 
-  __z::log::format_text 2 ""
+  __zlog::format_text 2 ""
   assert_rc 0 $? "Empty message is accepted"
 
-  __z::log::format_text 2
+  __zlog::format_text 2
   assert_rc 1 $? "Missing message returns 1"
 
-  z::log::set_color_mode "$saved_mode" >/dev/null 2>&1
+  zlog::set_color_mode "$saved_mode" >/dev/null 2>&1
   _zlog_config[format]="$saved_format"
 }
 
@@ -493,11 +493,11 @@ test_format_json() {
   _zlog_config[format]=json
 
   # Level name is rendered without escaping but must still be the right label.
-  __z::log::format_json 0 "boom"
+  __zlog::format_json 0 "boom"
   assert_contains "$REPLY" '"level":"ERROR"'   "ERROR level label rendered"
-  __z::log::format_json 2 "hello"
+  __zlog::format_json 2 "hello"
   assert_contains "$REPLY" '"level":"INFO"'    "INFO level label rendered"
-  __z::log::format_json 7 "weird"
+  __zlog::format_json 7 "weird"
   assert_contains "$REPLY" '"level":"UNKNOWN"' "Unknown level falls back to UNKNOWN"
 
   # Required fixed fields are present.
@@ -507,11 +507,11 @@ test_format_json() {
   assert_contains "$REPLY" '"user":"'      "user field present"
 
   # Message escaping: quote and backslash must be escaped.
-  __z::log::format_json 2 'a "q" \ b'
+  __zlog::format_json 2 'a "q" \ b'
   assert_contains "$REPLY" '"message":"a \"q\" \\ b"' "Message quote/backslash escaped"
 
   # Context key/value pairs are appended and value-escaped.
-  __z::log::format_json 2 "msg" k1 v1 k2 'v"2'
+  __zlog::format_json 2 "msg" k1 v1 k2 'v"2'
   assert_contains "$REPLY" '"k1":"v1"'   "Context key=value rendered"
   assert_contains "$REPLY" '"k2":"v\"2"' "Context value quote escaped"
 
@@ -519,22 +519,22 @@ test_format_json() {
   HOST=$'ho"st\\name'
   _zlog_sys_cache[hostname]=""
   _zlog_sys_cache[hostname_src]="__unset__"
-  __z::log::format_json 2 "hello"
+  __zlog::format_json 2 "hello"
   assert_contains "$REPLY" '"hostname":"ho\"st\\name"' "Special hostname escaped in JSON"
 
   # Changing the hostname must invalidate the cached escape.
   HOST=$'second"host'
   _zlog_sys_cache[hostname]=""
-  __z::log::format_json 2 "hello"
+  __zlog::format_json 2 "hello"
   assert_contains "$REPLY" '"hostname":"second\"host"' "Hostname re-escaped after change"
 
   # Odd/empty argument handling.
-  __z::log::format_json 2 ""
+  __zlog::format_json 2 ""
   assert_rc 0 $? "Empty message accepted"
-  __z::log::format_json 2
+  __zlog::format_json 2
   assert_rc 1 $? "Missing message returns 1"
 
-  z::log::clear_sys_cache all >/dev/null 2>&1
+  zlog::clear_sys_cache all >/dev/null 2>&1
   _zlog_config[format]="$saved_format"
 }
 
@@ -548,7 +548,7 @@ typeset -g ZLOG_PATH="${SCRIPT_DIR}/../zlog"
 # Regression guard for the audit's Critical/Major findings:
 #   - sourcing must not mutate the caller shell's options (no file-scope emulate)
 #   - re-sourcing must be clean (readonly constants guarded; "safe to source many times")
-#   - __z::log::engine_fast must be defined exactly once (no shadowing duplicate)
+#   - __zlog::engine_fast must be defined exactly once (no shadowing duplicate)
 #   - timestamp path must use the no-fork `strftime -s` assign form
 #   - list_timers elapsed must be a real duration, never "<invalid>"
 test_load_safety() {
@@ -571,8 +571,8 @@ test_load_safety() {
 
   # (c) engine_fast is defined exactly once (duplicate definition removed).
   local engine_def_count
-  engine_def_count=$(grep -c '^__z::log::engine_fast()' "$ZLOG_PATH")
-  assert_eq "1" "$engine_def_count" "__z::log::engine_fast defined exactly once"
+  engine_def_count=$(grep -c '^__zlog::engine_fast()' "$ZLOG_PATH")
+  assert_eq "1" "$engine_def_count" "__zlog::engine_fast defined exactly once"
 
   # (d) No $(strftime ...) command substitutions remain (use strftime -s instead).
   local strftime_subs
@@ -581,28 +581,28 @@ test_load_safety() {
 
   # (e) list_timers reports a valid elapsed duration (not "<invalid>").
   local orig_level="${_zlog_config[level]}"
-  z::log::set_level debug
-  z::log::clear_timers
-  z::log::benchmark_start "audit-timer" >/dev/null
+  zlog::set_level debug
+  zlog::clear_timers
+  zlog::benchmark_start "audit-timer" >/dev/null
   local timers_out
-  timers_out=$(z::log::list_timers)
+  timers_out=$(zlog::list_timers)
   assert_contains "$timers_out" "audit-timer" "list_timers shows the timer name"
   local has_invalid=0
   [[ "$timers_out" == *"<invalid>"* ]] && has_invalid=1
   assert_eq "0" "$has_invalid" "list_timers elapsed is a real duration, not <invalid>"
-  z::log::clear_timers
+  zlog::clear_timers
   _zlog_config[level]=$orig_level
-  __z::log::update_fast_flags
+  __zlog::update_fast_flags
 
   # (f) Public display helpers must emit context data literally. In particular,
   # values that look like print options or contain backslash escapes are data.
-  z::log::remove_all_contexts
-  z::log::with_context flag "-n" path 'C:\tmp\value' >/dev/null
+  zlog::remove_all_contexts
+  zlog::with_context flag "-n" path 'C:\tmp\value' >/dev/null
   local contexts_out
-  contexts_out=$(z::log::list_contexts)
+  contexts_out=$(zlog::list_contexts)
   assert_contains "$contexts_out" "flag=-n" "list_contexts preserves option-like context value"
   assert_contains "$contexts_out" 'path=C:\tmp\value' "list_contexts preserves context backslashes"
-  z::log::remove_all_contexts
+  zlog::remove_all_contexts
 }
 
 ###############################################################################

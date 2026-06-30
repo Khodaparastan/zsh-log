@@ -52,16 +52,16 @@ That's it. No package manager, no build step.
 source ./zlog
 
 # Console only (default)
-z::log::info  "Server started" port 8080 env production
-z::log::warn  "High memory usage" used_mb 1800 limit_mb 2048
-z::log::error "Connection refused" host db.internal retries 3
+zlog::info  "Server started" port 8080 env production
+zlog::warn  "High memory usage" used_mb 1800 limit_mb 2048
+zlog::error "Connection refused" host db.internal retries 3
 
 # With a log file
-z::log::setup /var/log/myapp.log info text
+zlog::setup /var/log/myapp.log info text
 
 # Switch to JSON (great for log aggregators)
-z::log::set_format json
-z::log::info "User login" user alice ip 10.0.0.1
+zlog::set_format json
+zlog::info "User login" user alice ip 10.0.0.1
 ```
 
 **Text output:**
@@ -81,52 +81,52 @@ z::log::info "User login" user alice ip 10.0.0.1
 ## Core API
 
 ```zsh
-z::log::error "msg" [key val ...]   # level 0 — always shown
-z::log::warn  "msg" [key val ...]   # level 1
-z::log::info  "msg" [key val ...]   # level 2 (default threshold)
-z::log::debug "msg" [key val ...]   # level 3
+zlog::error "msg" [key val ...]   # level 0 — always shown
+zlog::warn  "msg" [key val ...]   # level 1
+zlog::info  "msg" [key val ...]   # level 2 (default threshold)
+zlog::debug "msg" [key val ...]   # level 3
 
-z::log::infof  "Loaded %d items in %.2fs" $count $elapsed   # printf-style
+zlog::infof  "Loaded %d items in %.2fs" $count $elapsed   # printf-style
 ```
 
 ### Context loggers
 
 ```zsh
-z::log::with_context "request_id" "abc-123" "user" "alice"
+zlog::with_context "request_id" "abc-123" "user" "alice"
 local ctx="$REPLY"
 
 ${ctx}::info  "Request received"          # → ... | request_id=abc-123 user=alice
 ${ctx}::error "Handler failed" code 500
 
-z::log::remove_context "$ctx"
+zlog::remove_context "$ctx"
 ```
 
 ### Control flow
 
 ```zsh
-z::log::with_level debug my_function      # temporarily raise level
-z::log::silent      my_function           # suppress all logging
-z::log::once   "startup" info "Init done" # log only on first call
-z::log::rate_limit "warn-key" 5 60 warn "Slow query"  # max 5/min
+zlog::with_level debug my_function      # temporarily raise level
+zlog::silent      my_function           # suppress all logging
+zlog::once   "startup" info "Init done" # log only on first call
+zlog::rate_limit "warn-key" 5 60 warn "Slow query"  # max 5/min
 ```
 
 ### Benchmarking
 
 ```zsh
-z::log::benchmark "import" load_data file.csv
+zlog::benchmark "import" load_data file.csv
 # → [INFO ] import completed | duration=142ms
 ```
 
 ### Configuration
 
 ```zsh
-z::log::setup "/var/log/app.log" info text   # quick start
-z::log::set_level debug                       # change level at runtime
-z::log::set_format json                       # switch to JSON
-z::log::set_rotation 1 "50MB" 10             # rotate at 50 MB, keep 10
-z::log::enable_buffering 200                  # buffer 200 lines before flush
-z::log::show_config                           # print current settings table
-z::log::reset                                 # restore all defaults
+zlog::setup "/var/log/app.log" info text   # quick start
+zlog::set_level debug                       # change level at runtime
+zlog::set_format json                       # switch to JSON
+zlog::set_rotation 1 "50MB" 10             # rotate at 50 MB, keep 10
+zlog::enable_buffering 200                  # buffer 200 lines before flush
+zlog::show_config                           # print current settings table
+zlog::reset                                 # restore all defaults
 ```
 
 ---

@@ -21,7 +21,7 @@ logs/
 *.log
 *.log.*
 
-# Async FIFO (created at runtime by z::log::enable_async)
+# Async FIFO (created at runtime by zlog::enable_async)
 /tmp/zlog_*
 
 # Test temp files

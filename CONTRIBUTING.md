@@ -61,7 +61,7 @@ cd zlog
 zsh --version
 
 # Source the library in a test shell
-zsh -c 'source ./zlog; z::log::info "hello"'
+zsh -c 'source ./zlog; zlog::info "hello"'
 ```
 
 Optional tools used in tests:
@@ -102,7 +102,7 @@ Optional tools used in tests:
 - Every function starts with `emulate -L zsh` and `setopt localoptions`.
 - Local variables are declared with `local` at the top of the function.
 - Functions that return a single value set `REPLY=` instead of using a subshell.
-- All internal functions are prefixed `__z::log::`. Public API functions are prefixed `z::log::`.
+- All internal functions are prefixed `__zlog::`. Public API functions are prefixed `zlog::`.
 - No global side-effects outside of the `_zlog_*` namespaced variables.
 - Error messages go to `>&2`.
 
@@ -110,8 +110,8 @@ Optional tools used in tests:
 
 | Kind              | Convention                               | Example               |
 |-------------------|------------------------------------------|-----------------------|
-| Public function   | `z::log::<name>`                         | `z::log::info`        |
-| Internal function | `__z::log::<name>`                       | `__z::log::engine`    |
+| Public function   | `zlog::<name>`                         | `zlog::info`        |
+| Internal function | `__zlog::<name>`                       | `__zlog::engine`    |
 | Global config     | `_zlog_config[<key>]`                    | `_zlog_config[level]` |
 | Global state      | `_zlog_state[<key>]`                     | `_zlog_state[depth]`  |
 | Constants         | `_ZLOG_<NAME>` (readonly integer/string) | `_ZLOG_LEVEL_ERROR`   |
@@ -156,9 +156,9 @@ source "${0:A:h}/../zlog"
 local tmplog=$(mktemp)
 trap "rm -f $tmplog" EXIT
 
-z::log::setup "$tmplog" info text
+zlog::setup "$tmplog" info text
 
-z::log::info "hello world"
+zlog::info "hello world"
 
 if grep -q "hello world" "$tmplog"; then
   print "PASS: basic info log"
@@ -208,5 +208,5 @@ Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
 feat(rotation): add configurable lock timeout
 fix(buffer): flush buffer before exit on SIGTERM
 perf(engine): skip format call when no output targets active
-docs(api): document z::log::rate_limit parameters
+docs(api): document zlog::rate_limit parameters
 ```
