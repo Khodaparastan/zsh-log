@@ -579,11 +579,15 @@ bench_contexts() {
   bench_case "context" "with_context create+remove" 2000 \
     bench_context_create_remove
 
-  z::log::with_context request_id req-bench user bench >/dev/null 2>&1
+  z::log::with_context request_id req-bench user_id bench >/dev/null 2>&1
   BENCH_CTX="$REPLY"
+  if [[ -z "$BENCH_CTX" ]]; then
+    print -r -u2 -- "benchmark-zlog: failed to create benchmark context; skipping context-call cases"
+    return 1
+  fi
   BENCH_CTX_INFO="${BENCH_CTX}::info"
   bench_case "context" "direct info same fields" 3000 \
-  z::log::info "Context log message" request_id req-bench user bench
+  z::log::info "Context log message" request_id req-bench user_id bench
 
   bench_case "context" "ctx info inherited fields" 3000 \
     "$BENCH_CTX_INFO" "Context log message"
