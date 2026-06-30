@@ -6,7 +6,7 @@
 # ==============================================================================
 
 emulate -L zsh
-setopt err_return no_unset pipe_fail
+setopt no_unset pipe_fail
 
 SCRIPT_DIR="${0:A:h}"
 source "${SCRIPT_DIR}/../zlog"
@@ -20,13 +20,13 @@ typeset -ga _t_failures=()
 
 _t_ok() {
   local desc="$1"
-  (( _t_count++ )); (( _t_passed++ ))
+  (( ++_t_count )); (( ++_t_passed ))
   print "  ✓ $desc"
 }
 
 _t_fail() {
   local desc="$1" detail="${2:-}"
-  (( _t_count++ )); (( _t_failed++ ))
+  (( ++_t_count )); (( ++_t_failed ))
   _t_failures+=("$desc")
   print "  ✗ $desc"
   [[ -n "$detail" ]] && print "    $detail"
@@ -429,6 +429,183 @@ test_show_colors() {
 }
 
 ###############################################################################
+# 10b. format_text output (default engine formatter)
+###############################################################################
+
+# Pins the exact rendered structure of the default-engine text formatter.
+# format_text was optimized to inline four cached-lookup helpers (level_name,
+# sys::pid, the named-color path of colorize, and str::repeat padding) instead
+# of calling them per log line; this test guards that the user-visible output
+# is unchanged: 5-char level padding, UNKNOWN fallback, and context-field tail.
+test_format_text() {
+  section "format_text Output (default formatter)"
+
+  local saved_mode; saved_mode=$(z::log::get_color_mode)
+  local saved_format="${_zlog_config[format]}"
+  z::log::set_color_mode none >/dev/null 2>&1
+  _zlog_config[format]=text
+
+  __z::log::format_text 0 "boom"
+  assert_contains "$REPLY" " [ERROR] " "ERROR level not padded (5 chars already)"
+  assert_contains "$REPLY" " boom"     "ERROR message present"
+
+  __z::log::format_text 1 "careful"
+  assert_contains "$REPLY" " [WARN ] " "WARN level padded to 5 chars"
+
+  __z::log::format_text 2 "hello"
+  assert_contains "$REPLY" " [INFO ] " "INFO level padded to 5 chars"
+
+  __z::log::format_text 3 "trace"
+  assert_contains "$REPLY" " [DEBUG] " "DEBUG level not padded (5 chars already)"
+
+  __z::log::format_text 7 "weird"
+  assert_contains "$REPLY" " [UNKNOWN] " "Unknown level falls back to UNKNOWN"
+
+  __z::log::format_text 2 "with fields" request_id abc duration_ms 1500
+  assert_contains "$REPLY" "request_id=abc"  "Context key=value rendered"
+  assert_contains "$REPLY" "duration_ms=1500" "Second context key=value rendered"
+  assert_contains "$REPLY" "| request_id"     "Context fields separated by pipe"
+
+  __z::log::format_text 2 ""
+  assert_rc 0 $? "Empty message is accepted"
+
+  __z::log::format_text 2
+  assert_rc 1 $? "Missing message returns 1"
+
+  z::log::set_color_mode "$saved_mode" >/dev/null 2>&1
+  _zlog_config[format]="$saved_format"
+}
+
+###############################################################################
+# 10c. format_json output (default engine JSON formatter)
+###############################################################################
+
+# Pins the JSON formatter's structure and escaping. format_json was optimized to
+# inline level/pid lookups, skip escaping the always-ASCII level name, and cache
+# the escaped hostname/username (per-process constants) instead of re-escaping
+# them on every line. This test guards that the rendered JSON is unchanged:
+# correct field order, message/key/value escaping, and host/user re-escaping
+# when the underlying value changes (cache invalidation via source marker).
+test_format_json() {
+  section "format_json Output (default JSON formatter)"
+
+  local saved_format="${_zlog_config[format]}"
+  _zlog_config[format]=json
+
+  # Level name is rendered without escaping but must still be the right label.
+  __z::log::format_json 0 "boom"
+  assert_contains "$REPLY" '"level":"ERROR"'   "ERROR level label rendered"
+  __z::log::format_json 2 "hello"
+  assert_contains "$REPLY" '"level":"INFO"'    "INFO level label rendered"
+  __z::log::format_json 7 "weird"
+  assert_contains "$REPLY" '"level":"UNKNOWN"' "Unknown level falls back to UNKNOWN"
+
+  # Required fixed fields are present.
+  assert_contains "$REPLY" '"timestamp":"' "timestamp field present"
+  assert_contains "$REPLY" '"hostname":"'  "hostname field present"
+  assert_contains "$REPLY" '"pid":'        "pid field present (unquoted integer)"
+  assert_contains "$REPLY" '"user":"'      "user field present"
+
+  # Message escaping: quote and backslash must be escaped.
+  __z::log::format_json 2 'a "q" \ b'
+  assert_contains "$REPLY" '"message":"a \"q\" \\ b"' "Message quote/backslash escaped"
+
+  # Context key/value pairs are appended and value-escaped.
+  __z::log::format_json 2 "msg" k1 v1 k2 'v"2'
+  assert_contains "$REPLY" '"k1":"v1"'   "Context key=value rendered"
+  assert_contains "$REPLY" '"k2":"v\"2"' "Context value quote escaped"
+
+  # Hostname with special chars must be escaped, then cached + reused.
+  HOST=$'ho"st\\name'
+  _zlog_sys_cache[hostname]=""
+  _zlog_sys_cache[hostname_src]="__unset__"
+  __z::log::format_json 2 "hello"
+  assert_contains "$REPLY" '"hostname":"ho\"st\\name"' "Special hostname escaped in JSON"
+
+  # Changing the hostname must invalidate the cached escape.
+  HOST=$'second"host'
+  _zlog_sys_cache[hostname]=""
+  __z::log::format_json 2 "hello"
+  assert_contains "$REPLY" '"hostname":"second\"host"' "Hostname re-escaped after change"
+
+  # Odd/empty argument handling.
+  __z::log::format_json 2 ""
+  assert_rc 0 $? "Empty message accepted"
+  __z::log::format_json 2
+  assert_rc 1 $? "Missing message returns 1"
+
+  z::log::clear_sys_cache all >/dev/null 2>&1
+  _zlog_config[format]="$saved_format"
+}
+
+###############################################################################
+# 11. Load Safety & Audit Regressions
+###############################################################################
+
+# Absolute path to the loader under test (resolve relative ../zlog).
+typeset -g ZLOG_PATH="${SCRIPT_DIR}/../zlog"
+
+# Regression guard for the audit's Critical/Major findings:
+#   - sourcing must not mutate the caller shell's options (no file-scope emulate)
+#   - re-sourcing must be clean (readonly constants guarded; "safe to source many times")
+#   - __z::log::engine_fast must be defined exactly once (no shadowing duplicate)
+#   - timestamp path must use the no-fork `strftime -s` assign form
+#   - list_timers elapsed must be a real duration, never "<invalid>"
+test_load_safety() {
+  section "Load Safety & Audit Regressions"
+
+  # (a) No option mutation of the parent shell when sourced.
+  local opt_result
+  opt_result=$(zsh -fc '
+    before=$(setopt)
+    source "$1" 2>/dev/null
+    after=$(setopt)
+    [[ "$before" == "$after" ]] && print MATCH || print DIFF
+  ' zlog "$ZLOG_PATH")
+  assert_eq "MATCH" "$opt_result" "Sourcing does not mutate caller shell options"
+
+  # (b) Double-source is clean (no read-only variable errors on stderr).
+  local dbl_err
+  dbl_err=$(zsh -fc 'source "$1"; source "$1"' zlog "$ZLOG_PATH" 2>&1 >/dev/null)
+  assert_eq "" "$dbl_err" "Re-sourcing produces no errors (no read-only variable)"
+
+  # (c) engine_fast is defined exactly once (duplicate definition removed).
+  local engine_def_count
+  engine_def_count=$(grep -c '^__z::log::engine_fast()' "$ZLOG_PATH")
+  assert_eq "1" "$engine_def_count" "__z::log::engine_fast defined exactly once"
+
+  # (d) No $(strftime ...) command substitutions remain (use strftime -s instead).
+  local strftime_subs
+  strftime_subs=$(grep -c '\$(strftime' "$ZLOG_PATH")
+  assert_eq "0" "$strftime_subs" "No \$(strftime) command substitutions remain"
+
+  # (e) list_timers reports a valid elapsed duration (not "<invalid>").
+  local orig_level="${_zlog_config[level]}"
+  z::log::set_level debug
+  z::log::clear_timers
+  z::log::benchmark_start "audit-timer" >/dev/null
+  local timers_out
+  timers_out=$(z::log::list_timers)
+  assert_contains "$timers_out" "audit-timer" "list_timers shows the timer name"
+  local has_invalid=0
+  [[ "$timers_out" == *"<invalid>"* ]] && has_invalid=1
+  assert_eq "0" "$has_invalid" "list_timers elapsed is a real duration, not <invalid>"
+  z::log::clear_timers
+  _zlog_config[level]=$orig_level
+  __z::log::update_fast_flags
+
+  # (f) Public display helpers must emit context data literally. In particular,
+  # values that look like print options or contain backslash escapes are data.
+  z::log::remove_all_contexts
+  z::log::with_context flag "-n" path 'C:\tmp\value' >/dev/null
+  local contexts_out
+  contexts_out=$(z::log::list_contexts)
+  assert_contains "$contexts_out" "flag=-n" "list_contexts preserves option-like context value"
+  assert_contains "$contexts_out" 'path=C:\tmp\value' "list_contexts preserves context backslashes"
+  z::log::remove_all_contexts
+}
+
+###############################################################################
 # Run all
 ###############################################################################
 
@@ -446,5 +623,8 @@ test_debug_mode
 test_json_escaping
 test_level_helpers
 test_show_colors
+test_format_text
+test_format_json
+test_load_safety
 
 summary
